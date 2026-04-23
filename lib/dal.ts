@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect, forbidden } from "next/navigation";
+import { redirect } from "next/navigation";
 import { auth } from "./auth";
 
 type Role = "SELLER" | "ADMIN" | "SUPER_ADMIN";
@@ -13,6 +13,6 @@ export const verifySession = async () => {
 
 export const verifyRole = async (allowed: Role[]) => {
   const user = await verifySession();
-  if (!allowed.includes(user.role as Role)) forbidden();
+  if (!allowed.includes(user.role as Role)) redirect("/dashboard/overview");
   return user;
 };
