@@ -10,19 +10,10 @@ export async function updateExchangeRateAction(
 ): Promise<{ error: string } | { success: true }> {
   const user = await verifyRole(["SUPER_ADMIN"]);
   const rate = parseFloat(formData.get("rate") as string);
-  const usdcContractAddress = (formData.get("usdcContractAddress") as string)?.trim();
-  const treasuryAddress = (formData.get("treasuryAddress") as string)?.trim();
 
   if (isNaN(rate) || rate <= 0) return { error: "Rate must be a positive number." };
-  if (!usdcContractAddress) return { error: "USDC contract address is required." };
-  if (!treasuryAddress) return { error: "Treasury address is required." };
 
-  await insertExchangeRate({
-    rate: String(rate),
-    usdcContractAddress,
-    treasuryAddress,
-    updatedBy: user.id,
-  });
+  await insertExchangeRate({ rate: String(rate), updatedBy: user.id });
 
   revalidatePath("/dashboard/exchange-rate");
   revalidatePath("/dashboard/buy");

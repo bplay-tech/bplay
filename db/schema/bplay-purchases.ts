@@ -15,6 +15,7 @@ export const bplayPurchases = pgTable("bplay_purchases", {
   bplayAmount: numeric("bplay_amount", { precision: 18, scale: 6 }).notNull(),
   exchangeRate: numeric("exchange_rate", { precision: 12, scale: 6 }).notNull(),
   buyerWallet: text("buyer_wallet").notNull(),
+  recipientAddress: text("recipient_address"),
   txHash: text("tx_hash").unique(),
   status: bplayStatusEnum("status").notNull().default("pending_payment"),
   approvedBy: uuid("approved_by").references(() => users.id),

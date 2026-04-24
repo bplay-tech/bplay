@@ -22,16 +22,17 @@ export function CreateMemberModal({ open, onOpenChange }: CreateMemberModalProps
   const [role, setRole] = useState("SELLER");
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange} title="Create Team Member">
+    <Modal open={open} onOpenChange={onOpenChange} title="Invite Team Member">
       <form action={action} className="flex flex-col gap-4">
         <Input name="name" label="Full Name" placeholder="Jane Doe" required />
         <Input name="email" label="Email" type="email" placeholder="jane@example.com" required />
-        <Input name="password" label="Password" type="password" placeholder="Min. 8 characters" required />
         <Select label="Role" value={role} onValueChange={setRole} options={ROLE_OPTIONS} />
         <input type="hidden" name="role" value={role} />
         {state && "error" in state && <p className="text-sm text-danger">{state.error}</p>}
-        {state && "success" in state && <p className="text-sm text-success">Member created successfully!</p>}
-        <Button type="submit" loading={pending} className="w-full">Create Member</Button>
+        {state && "success" in state && (
+          <p className="text-sm text-success">Invitation email sent successfully!</p>
+        )}
+        <Button type="submit" loading={pending} className="w-full">Send Invitation</Button>
       </form>
     </Modal>
   );

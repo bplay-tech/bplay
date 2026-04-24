@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("SELLER"),
   partnerTierId: uuid("partner_tier_id").notNull().references(() => partnerTiers.id),
   referralCode: text("referral_code").notNull().unique(),
+  transferAddress: text("transfer_address"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -12,7 +12,8 @@ import {
 
 export async function createBplayPurchaseAction(
   usdcAmount: number,
-  buyerWallet: string
+  buyerWallet: string,
+  recipientAddress: string
 ): Promise<{ purchaseId: string; bplayAmount: number }> {
   const user = await verifySession();
   const rate = await getExchangeRate();
@@ -25,6 +26,7 @@ export async function createBplayPurchaseAction(
     bplayAmount: String(bplayAmount),
     exchangeRate: rate.rate,
     buyerWallet,
+    recipientAddress,
   });
 
   return { purchaseId: purchase.id, bplayAmount };

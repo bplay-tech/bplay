@@ -18,6 +18,7 @@ export const getAllPendingPurchases = async (): Promise<BplayPurchaseWithUser[]>
       bplayAmount: bplayPurchases.bplayAmount,
       exchangeRate: bplayPurchases.exchangeRate,
       buyerWallet: bplayPurchases.buyerWallet,
+      recipientAddress: bplayPurchases.recipientAddress,
       txHash: bplayPurchases.txHash,
       status: bplayPurchases.status,
       approvedBy: bplayPurchases.approvedBy,

@@ -22,9 +22,11 @@ interface QuickBuyButtonsProps {
   rate: number;
   treasuryAddress: string;
   usdcContractAddress: string;
+  transferAddress: string | null;
 }
 
-export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress }: QuickBuyButtonsProps) {
+export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, transferAddress }: QuickBuyButtonsProps) {
+  const recipient = (transferAddress ?? treasuryAddress) as `0x${string}`;
   const { address, isConnected } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
   const [pending, setPending] = useState(false);
@@ -35,12 +37,12 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress }: 
     if (!address) return;
     setLoading(usdcAmount);
     try {
-      const { purchaseId } = await createBplayPurchaseAction(usdcAmount, address);
+      const { purchaseId } = await createBplayPurchaseAction(usdcAmount, address, recipient);
 
       const data = encodeFunctionData({
         abi: ERC20_TRANSFER_ABI,
         functionName: "transfer",
-        args: [treasuryAddress as `0x${string}`, parseUnits(String(usdcAmount), 6)],
+        args: [recipient, parseUnits(String(usdcAmount), 6)],
       });
 
       setPending(true);

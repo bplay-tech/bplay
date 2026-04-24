@@ -10,6 +10,7 @@ import {
   Settings,
   Package,
   RefreshCw,
+  Coins,
   Bell,
   ChevronDown,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Sales & Referrals", href: "/dashboard/sales", icon: <TrendingUp className="h-4 w-4" /> },
   { label: "Team", href: "/dashboard/team", icon: <Users className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
   { label: "Payouts", href: "/dashboard/payouts", icon: <Wallet className="h-4 w-4" /> },
+  { label: "Buy BPLAY", href: "/dashboard/buy", icon: <Coins className="h-4 w-4" /> },
   { label: "Settings", href: "/dashboard/settings", icon: <Settings className="h-4 w-4" /> },
   { label: "Purchases", href: "/dashboard/purchases", icon: <Package className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
   { label: "Exchange Rate", href: "/dashboard/exchange-rate", icon: <RefreshCw className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },

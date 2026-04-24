@@ -6,6 +6,21 @@ import { affiliations } from "../schema/affiliations";
 
 export type UserWithTier = User & { tier: PartnerTier };
 
+const userWithTierSelect = {
+  id: users.id,
+  email: users.email,
+  passwordHash: users.passwordHash,
+  name: users.name,
+  role: users.role,
+  partnerTierId: users.partnerTierId,
+  referralCode: users.referralCode,
+  transferAddress: users.transferAddress,
+  isActive: users.isActive,
+  createdAt: users.createdAt,
+  updatedAt: users.updatedAt,
+  tier: partnerTiers,
+};
+
 export const getUserById = async (id: string): Promise<User | null> => {
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return result[0] ?? null;
@@ -35,21 +50,16 @@ export const updateUser = async (id: string, data: Partial<NewUser>): Promise<Us
   return result[0];
 };
 
+export const updateTransferAddress = async (userId: string, address: string | null): Promise<void> => {
+  await db
+    .update(users)
+    .set({ transferAddress: address, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+};
+
 export const getAllUsers = async (): Promise<UserWithTier[]> => {
   const result = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      passwordHash: users.passwordHash,
-      name: users.name,
-      role: users.role,
-      partnerTierId: users.partnerTierId,
-      referralCode: users.referralCode,
-      isActive: users.isActive,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      tier: partnerTiers,
-    })
+    .select(userWithTierSelect)
     .from(users)
     .innerJoin(partnerTiers, eq(users.partnerTierId, partnerTiers.id));
 
@@ -58,19 +68,7 @@ export const getAllUsers = async (): Promise<UserWithTier[]> => {
 
 export const getUsersByAffiliator = async (affiliateId: string): Promise<UserWithTier[]> => {
   const result = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      passwordHash: users.passwordHash,
-      name: users.name,
-      role: users.role,
-      partnerTierId: users.partnerTierId,
-      referralCode: users.referralCode,
-      isActive: users.isActive,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      tier: partnerTiers,
-    })
+    .select(userWithTierSelect)
     .from(users)
     .innerJoin(affiliations, eq(affiliations.referredUserId, users.id))
     .innerJoin(partnerTiers, eq(users.partnerTierId, partnerTiers.id))

@@ -32,11 +32,7 @@ async function seedExchangeRate() {
     console.log("  Exchange rate already seeded — skipping");
     return;
   }
-  await db.insert(exchangeRates).values({
-    rate: "6.67",
-    usdcContractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    treasuryAddress: "0x0000000000000000000000000000000000000000",
-  });
+  await db.insert(exchangeRates).values({ rate: "6.67" });
   console.log("  Exchange rate created: 1 USDC = 6.67 BPLAY");
 }
 

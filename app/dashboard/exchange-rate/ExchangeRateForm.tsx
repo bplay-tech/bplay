@@ -25,20 +25,6 @@ export function ExchangeRateForm({ current }: { current: ExchangeRate | null }) 
           placeholder="6.67"
           required
         />
-        <Input
-          name="usdcContractAddress"
-          label="USDC Contract Address"
-          defaultValue={current?.usdcContractAddress ?? ""}
-          placeholder="0x..."
-          required
-        />
-        <Input
-          name="treasuryAddress"
-          label="Treasury Wallet Address"
-          defaultValue={current?.treasuryAddress ?? ""}
-          placeholder="0x..."
-          required
-        />
         {state && "error" in state && <p className="text-sm text-danger">{state.error}</p>}
         {state && "success" in state && <p className="text-sm text-success">Exchange rate updated successfully.</p>}
         <Button type="submit" loading={pending} size="sm" className="self-start">Update Rate</Button>

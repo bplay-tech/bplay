@@ -8,6 +8,13 @@
       "when": 1776876272934,
       "tag": "0000_exotic_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776991038303,
+      "tag": "0001_tricky_gideon",
+      "breakpoints": true
     }
   ]
 }
