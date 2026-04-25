@@ -1,6 +1,12 @@
 import { LoginForm } from "./LoginForm";
 
-export default function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ reset?: string }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { reset } = await searchParams;
+
   return (
     <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -13,7 +19,7 @@ export default function LoginPage() {
             Partner Zone
           </span>
         </div>
-        <LoginForm />
+        <LoginForm resetSuccess={reset === "1"} />
       </div>
     </div>
   );

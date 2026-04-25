@@ -77,3 +77,48 @@ export const sendWelcomeEmail = async (
 
   if (error) throw new Error(`Failed to send welcome email: ${error.message}`);
 };
+
+export const sendPasswordResetEmail = async (
+  to: string,
+  name: string,
+  resetUrl: string
+): Promise<void> => {
+  const { error } = await resend.emails.send({
+    from: process.env.MAIL_FROM!,
+    to,
+    subject: "Reset your BPLAY password",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        <div style="margin-bottom:24px">
+          <div style="display:inline-block;background:linear-gradient(135deg,#2563eb,#0ea5e9);
+                      border-radius:10px;padding:10px 16px">
+            <span style="color:#fff;font-weight:700;font-size:18px">BPLAY</span>
+          </div>
+        </div>
+        <h1 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111827">
+          Reset your password
+        </h1>
+        <p style="color:#6b7280;margin-bottom:8px;line-height:1.6">
+          Hi ${name}, we received a request to reset your BPLAY Partner Portal password.
+          Click the button below to choose a new one.
+        </p>
+        <p style="color:#6b7280;margin-bottom:28px;line-height:1.6">
+          This link expires in <strong style="color:#111827">1 hour</strong>.
+        </p>
+        <a href="${resetUrl}"
+           style="display:inline-block;background:#2563eb;color:#fff;font-weight:600;
+                  padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px">
+          Reset Password
+        </a>
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb">
+          <p style="color:#9ca3af;font-size:12px;margin:0">
+            If you didn't request a password reset, you can safely ignore this email.
+            Your password will not change.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+
+  if (error) throw new Error(`Failed to send password reset email: ${error.message}`);
+};

@@ -2,18 +2,24 @@
 
 import { useActionState, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { loginAction } from "@/features/auth/actions";
 
-export function LoginForm() {
+export function LoginForm({ resetSuccess }: { resetSuccess?: boolean }) {
   const [state, action, pending] = useActionState(loginAction, null);
   const [showPass, setShowPass] = useState(false);
 
   return (
     <Card className="mt-4">
       <h2 className="text-lg font-semibold text-foreground mb-6">Sign in to your account</h2>
+      {resetSuccess && (
+        <div className="mb-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-400 text-center">
+          Password updated successfully. Sign in with your new password.
+        </div>
+      )}
       <form action={action} className="flex flex-col gap-4">
         <Input
           id="login-email"
@@ -24,9 +30,14 @@ export function LoginForm() {
           required
         />
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="login-password" className="text-sm font-medium text-foreground">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="login-password" className="text-sm font-medium text-foreground">
+              Password
+            </label>
+            <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <div className="relative">
             <input
               id="login-password"
