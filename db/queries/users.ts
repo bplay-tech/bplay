@@ -1,8 +1,15 @@
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { db } from "../client";
 import { users, type User, type NewUser } from "../schema/users";
 import { partnerTiers, type PartnerTier } from "../schema/partner-tiers";
 import { affiliations } from "../schema/affiliations";
+import { userSettings } from "../schema/user-settings";
+import { userNotifications } from "../schema/user-notifications";
+import { invitationTokens } from "../schema/invitation-tokens";
+import { transactions } from "../schema/transactions";
+import { payoutRequests } from "../schema/payout-requests";
+import { bplayPurchases } from "../schema/bplay-purchases";
+import { exchangeRates } from "../schema/exchange-rates";
 
 export type UserWithTier = User & { tier: PartnerTier };
 
@@ -48,6 +55,24 @@ export const updateUser = async (id: string, data: Partial<NewUser>): Promise<Us
     .where(eq(users.id, id))
     .returning();
   return result[0];
+};
+
+export const deleteUser = async (id: string): Promise<void> => {
+  // Nullify nullable FKs in records owned by other users
+  await db.update(exchangeRates).set({ updatedBy: null }).where(eq(exchangeRates.updatedBy, id));
+  await db.update(bplayPurchases).set({ approvedBy: null }).where(eq(bplayPurchases.approvedBy, id));
+  await db.update(payoutRequests).set({ reviewedBy: null }).where(eq(payoutRequests.reviewedBy, id));
+
+  // Delete all records owned by this user
+  await db.delete(userSettings).where(eq(userSettings.userId, id));
+  await db.delete(userNotifications).where(eq(userNotifications.userId, id));
+  await db.delete(invitationTokens).where(eq(invitationTokens.userId, id));
+  await db.delete(transactions).where(eq(transactions.userId, id));
+  await db.delete(payoutRequests).where(eq(payoutRequests.userId, id));
+  await db.delete(bplayPurchases).where(eq(bplayPurchases.userId, id));
+  await db.delete(affiliations).where(or(eq(affiliations.affiliateId, id), eq(affiliations.referredUserId, id)));
+
+  await db.delete(users).where(eq(users.id, id));
 };
 
 export const updateTransferAddress = async (userId: string, address: string | null): Promise<void> => {

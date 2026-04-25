@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { verifyRole } from "@/lib/dal";
-import { createUser, updateUser } from "@/db/queries/users";
+import { createUser, updateUser, deleteUser } from "@/db/queries/users";
 import { createAffiliation } from "@/db/queries/affiliations";
 import { getPartnerTierByName } from "@/db/queries/partner-tiers";
 import { upsertSettings } from "@/db/queries/user-settings";
 import { upsertNotifications } from "@/db/queries/user-notifications";
-import { createInvitationToken } from "@/db/queries/invitation-tokens";
 import { generateUniqueReferralCode } from "@/lib/referral";
+import { signInviteToken } from "@/lib/invite-token";
 import { sendInvitationEmail } from "@/lib/email";
 import { walletAddressSchema } from "@/lib/zod";
 
@@ -44,17 +44,21 @@ export async function createUserAction(
     upsertNotifications(newUser.id, {}),
   ]);
 
-  const token = await createInvitationToken(newUser.id);
+  const token = await signInviteToken(newUser.id, name);
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite?token=${token}`;
-  await sendInvitationEmail(email, name, inviteUrl);
+  try {
+    await sendInvitationEmail(email, name, inviteUrl);
+  } catch (err) {
+    return { error: `User created but invitation email failed: ${(err as Error).message}` };
+  }
 
   revalidatePath("/dashboard/team");
   return { success: true };
 }
 
-export async function deactivateUserAction(userId: string): Promise<void> {
+export async function deleteUserAction(userId: string): Promise<void> {
   await verifyRole(["SUPER_ADMIN"]);
-  await updateUser(userId, { isActive: false });
+  await deleteUser(userId);
   revalidatePath("/dashboard/team");
 }
 

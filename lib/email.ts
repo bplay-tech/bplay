@@ -7,8 +7,8 @@ export const sendInvitationEmail = async (
   name: string,
   inviteUrl: string
 ): Promise<void> => {
-  await resend.emails.send({
-    from: "BPLAY Partner Portal <noreply@bplay-delta.vercel.app>",
+  const { error } = await resend.emails.send({
+    from: process.env.MAIL_FROM!,
     to,
     subject: "You've been invited to BPLAY Partner Portal",
     html: `
@@ -28,4 +28,6 @@ export const sendInvitationEmail = async (
       </div>
     `,
   });
+
+  if (error) throw new Error(`Failed to send invitation email: ${error.message}`);
 };

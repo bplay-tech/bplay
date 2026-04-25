@@ -1,4 +1,4 @@
-import { getValidInvitationToken } from "@/db/queries/invitation-tokens";
+import { verifyInviteToken } from "@/lib/invite-token";
 import { Card } from "@/components/ui/Card";
 import { SetPasswordForm } from "./SetPasswordForm";
 
@@ -8,12 +8,12 @@ interface InvitePageProps {
 
 export default async function InvitePage({ searchParams }: InvitePageProps) {
   const { token } = await searchParams;
-  const record = token ? await getValidInvitationToken(token) : null;
+  const payload = token ? await verifyInviteToken(token) : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <Card className="w-full max-w-sm">
-        {!record ? (
+        {!payload ? (
           <>
             <h1 className="text-xl font-bold text-foreground mb-2">Link Invalid or Expired</h1>
             <p className="text-sm text-muted">
@@ -22,7 +22,7 @@ export default async function InvitePage({ searchParams }: InvitePageProps) {
           </>
         ) : (
           <>
-            <h1 className="text-xl font-bold text-foreground mb-1">Welcome, {record.user.name}!</h1>
+            <h1 className="text-xl font-bold text-foreground mb-1">Welcome, {payload.name}!</h1>
             <p className="text-sm text-muted mb-6">Set a password to activate your account.</p>
             <SetPasswordForm token={token!} />
           </>

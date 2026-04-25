@@ -43,6 +43,11 @@ export const updateBplayPurchaseTxHash = async (id: string, txHash: string): Pro
     .where(eq(bplayPurchases.id, id));
 };
 
+export const getBplayPurchaseById = async (id: string): Promise<BplayPurchase | null> => {
+  const result = await db.select().from(bplayPurchases).where(eq(bplayPurchases.id, id)).limit(1);
+  return result[0] ?? null;
+};
+
 export const getPurchaseByTxHash = async (txHash: string): Promise<BplayPurchase | null> => {
   const result = await db
     .select()

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
@@ -9,22 +10,20 @@ import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { Table, type Column } from "@/components/ui/Table";
 import { CreateMemberModal } from "./CreateMemberModal";
 import { TransferAddressModal } from "./TransferAddressModal";
-import { BuyBplaySection } from "@/features/purchases/components/BuyBplaySection";
-import { deactivateUserAction } from "@/features/team/actions";
+import { deleteUserAction } from "@/features/team/actions";
 import { formatAddress } from "@/lib/utils";
 import type { UserWithTier } from "@/db/queries/users";
 
 interface TeamClientProps {
   members: UserWithTier[];
   isSuperAdmin: boolean;
-  rate: number;
-  recipientAddress: string;
-  usdcContractAddress: string;
 }
 
-export function TeamClient({ members, isSuperAdmin, rate, recipientAddress, usdcContractAddress }: TeamClientProps) {
+export function TeamClient({ members, isSuperAdmin }: TeamClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [transferModal, setTransferModal] = useState<{ userId: string; current: string | null } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const columns: Column<UserWithTier>[] = [
     {
@@ -88,8 +87,16 @@ export function TeamClient({ members, isSuperAdmin, rate, recipientAddress, usdc
                 }
                 items={[
                   {
-                    label: "Deactivate",
-                    onClick: () => deactivateUserAction(r.id),
+                    label: deletingId === r.id ? "Deleting…" : "Delete",
+                    disabled: deletingId === r.id,
+                    onClick: () => {
+                      setDeletingId(r.id);
+                      startTransition(async () => {
+                        await deleteUserAction(r.id);
+                        setDeletingId(null);
+                        toast.success("Member deleted");
+                      });
+                    },
                     variant: "danger" as const,
                   },
                 ]}
@@ -101,22 +108,13 @@ export function TeamClient({ members, isSuperAdmin, rate, recipientAddress, usdc
   ];
 
   return (
-    <div className="flex flex-col gap-8">
-      <BuyBplaySection rate={rate} recipientAddress={recipientAddress} usdcContractAddress={usdcContractAddress} />
-
-      <div className="border-t border-card-border pt-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Team Management</h1>
-            <p className="text-sm text-muted mt-1">
-              {isSuperAdmin ? "All partners in the system" : "Partners you referred"}
-            </p>
-          </div>
-          {isSuperAdmin && <Button onClick={() => setModalOpen(true)}>Add Member</Button>}
+    <div className="flex flex-col gap-4">
+      {isSuperAdmin && (
+        <div className="flex justify-end">
+          <Button onClick={() => setModalOpen(true)}>Add Member</Button>
         </div>
-        <Table data={members} columns={columns} keyExtractor={(r) => r.id} emptyMessage="No team members found." />
-      </div>
-
+      )}
+      <Table data={members} columns={columns} keyExtractor={(r) => r.id} emptyMessage="No team members found." />
       {isSuperAdmin && <CreateMemberModal open={modalOpen} onOpenChange={setModalOpen} />}
       {transferModal && (
         <TransferAddressModal

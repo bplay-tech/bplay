@@ -8,7 +8,12 @@ import {
   updateBplayPurchaseTxHash,
   approveBplayPurchase,
   rejectBplayPurchase,
+  getBplayPurchaseById,
 } from "@/db/queries/bplay-purchases";
+import { getAffiliationByReferredUser } from "@/db/queries/affiliations";
+import { getUserById } from "@/db/queries/users";
+import { getPartnerTierById } from "@/db/queries/partner-tiers";
+import { createTransaction } from "@/db/queries/transactions";
 
 export async function createBplayPurchaseAction(
   usdcAmount: number,
@@ -38,8 +43,9 @@ export async function recordTxHashAction(purchaseId: string, txHash: string): Pr
 }
 
 export async function approvePurchaseAction(purchaseId: string): Promise<void> {
-  const user = await verifyRole(["SUPER_ADMIN"]);
-  await approveBplayPurchase(purchaseId, user.id);
+  const admin = await verifyRole(["SUPER_ADMIN"]);
+  await approveBplayPurchase(purchaseId, admin.id);
+  await maybeCreateAffiliateCommission(purchaseId);
   revalidatePath("/dashboard/purchases");
 }
 
@@ -47,4 +53,32 @@ export async function rejectPurchaseAction(purchaseId: string): Promise<void> {
   await verifyRole(["SUPER_ADMIN"]);
   await rejectBplayPurchase(purchaseId);
   revalidatePath("/dashboard/purchases");
+}
+
+async function maybeCreateAffiliateCommission(purchaseId: string): Promise<void> {
+  const purchase = await getBplayPurchaseById(purchaseId);
+  if (!purchase) return;
+
+  const affiliation = await getAffiliationByReferredUser(purchase.userId);
+  if (!affiliation) return;
+
+  const affiliate = await getUserById(affiliation.affiliateId);
+  if (!affiliate) return;
+
+  const tier = await getPartnerTierById(affiliate.partnerTierId);
+  if (!tier) return;
+
+  const commissionRate = parseFloat(tier.commissionRate);
+  const usdcAmount = parseFloat(purchase.usdcAmount);
+  const commissionAmount = ((usdcAmount * commissionRate) / 100).toFixed(2);
+
+  await createTransaction({
+    userId: affiliation.affiliateId,
+    type: "REFERRAL",
+    amount: commissionAmount,
+    buyerWallet: purchase.buyerWallet,
+    txHash: purchase.txHash ?? null,
+    status: "confirmed",
+    notes: `${commissionRate}% commission on $${usdcAmount} purchase`,
+  });
 }

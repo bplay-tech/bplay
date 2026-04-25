@@ -7,6 +7,7 @@ interface DropdownItem {
   label: string;
   onClick: () => void;
   variant?: "default" | "danger";
+  disabled?: boolean;
 }
 
 interface DropdownMenuProps {
@@ -28,11 +29,13 @@ export function DropdownMenu({ trigger, items }: DropdownMenuProps) {
             <Radix.Item
               key={item.label}
               onSelect={item.onClick}
+              disabled={item.disabled}
               className={cn(
                 "flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none transition-colors",
                 item.variant === "danger"
                   ? "text-danger data-[highlighted]:bg-danger/10"
-                  : "text-foreground data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary"
+                  : "text-foreground data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
+                item.disabled && "opacity-50 cursor-not-allowed pointer-events-none"
               )}
             >
               {item.label}

@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getValidInvitationToken, markTokenUsed } from "@/db/queries/invitation-tokens";
-import { updateUser } from "@/db/queries/users";
+import { verifyInviteToken } from "@/lib/invite-token";
+import { updateUser, getUserById } from "@/db/queries/users";
 import bcrypt from "bcryptjs";
 
 export async function setPasswordAction(
@@ -16,12 +16,15 @@ export async function setPasswordAction(
   if (!password || password.length < 8) return { error: "Password must be at least 8 characters." };
   if (password !== confirm) return { error: "Passwords do not match." };
 
-  const record = await getValidInvitationToken(token);
-  if (!record) return { error: "This link has expired or has already been used." };
+  const payload = await verifyInviteToken(token);
+  if (!payload) return { error: "This link has expired or is invalid." };
+
+  const user = await getUserById(payload.userId);
+  if (!user) return { error: "Account not found." };
+  if (user.isActive) return { error: "This account is already activated. Please log in." };
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await updateUser(record.userId, { passwordHash, isActive: true });
-  await markTokenUsed(record.id);
+  await updateUser(payload.userId, { passwordHash, isActive: true });
 
   redirect("/login");
 }
