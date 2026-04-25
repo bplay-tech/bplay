@@ -70,6 +70,16 @@ export async function updateUserTierAction(userId: string, tierName: string): Pr
   revalidatePath("/dashboard/team");
 }
 
+export async function updateUserRoleAction(
+  userId: string,
+  role: "SELLER" | "ADMIN"
+): Promise<{ error: string } | { success: true }> {
+  await verifyRole(["SUPER_ADMIN"]);
+  await updateUser(userId, { role });
+  revalidatePath("/dashboard/team");
+  return { success: true };
+}
+
 export async function updateTransferAddressAction(
   userId: string,
   address: string

@@ -10,7 +10,7 @@ import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { Table, type Column } from "@/components/ui/Table";
 import { CreateMemberModal } from "./CreateMemberModal";
 import { TransferAddressModal } from "./TransferAddressModal";
-import { deleteUserAction } from "@/features/team/actions";
+import { deleteUserAction, updateUserRoleAction } from "@/features/team/actions";
 import { formatAddress } from "@/lib/utils";
 import type { UserWithTier } from "@/db/queries/users";
 
@@ -23,6 +23,7 @@ export function TeamClient({ members, isSuperAdmin }: TeamClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [transferModal, setTransferModal] = useState<{ userId: string; current: string | null } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const columns: Column<UserWithTier>[] = [
@@ -86,6 +87,29 @@ export function TeamClient({ members, isSuperAdmin }: TeamClientProps) {
                   </button>
                 }
                 items={[
+                  ...(r.role !== "SUPER_ADMIN"
+                    ? [
+                        {
+                          label:
+                            changingRoleId === r.id
+                              ? "Updating…"
+                              : r.role === "SELLER"
+                              ? "Promote to Admin"
+                              : "Demote to Seller",
+                          disabled: changingRoleId === r.id,
+                          onClick: () => {
+                            setChangingRoleId(r.id);
+                            const newRole = r.role === "SELLER" ? "ADMIN" : "SELLER";
+                            startTransition(async () => {
+                              const result = await updateUserRoleAction(r.id, newRole);
+                              setChangingRoleId(null);
+                              if ("error" in result) toast.error(result.error);
+                              else toast.success(`Role updated to ${newRole}`);
+                            });
+                          },
+                        },
+                      ]
+                    : []),
                   {
                     label: deletingId === r.id ? "Deleting…" : "Delete",
                     disabled: deletingId === r.id,
