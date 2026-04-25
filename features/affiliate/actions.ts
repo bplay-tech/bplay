@@ -10,6 +10,7 @@ import { getPartnerTierByName } from "@/db/queries/partner-tiers";
 import { upsertSettings } from "@/db/queries/user-settings";
 import { upsertNotifications } from "@/db/queries/user-notifications";
 import { generateUniqueReferralCode } from "@/lib/referral";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function registerViaReferralAction(
   referralCode: string,
@@ -47,10 +48,13 @@ export async function registerViaReferralAction(
     isActive: true,
   });
 
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/buy`;
+
   await Promise.all([
     createAffiliation({ affiliateId: referrer.id, referredUserId: newUser.id }),
     upsertSettings(newUser.id, {}),
     upsertNotifications(newUser.id, {}),
+    sendWelcomeEmail(email, name, referrer.name, dashboardUrl),
   ]);
 
   try {
