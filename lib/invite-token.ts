@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 
 const secret = () => {
-  const key = process.env.AUTH_SECRET;
+  const key = (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "").trim();
   if (!key) throw new Error("AUTH_SECRET environment variable is not set");
   return new TextEncoder().encode(key);
 };
