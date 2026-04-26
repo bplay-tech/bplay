@@ -18,7 +18,7 @@ export async function createUserAction(
 ): Promise<{ error: string } | { success: true }> {
   const actor = await verifyRole(["SUPER_ADMIN"]);
   const name = (formData.get("name") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim();
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
   const role = formData.get("role") as "SELLER" | "ADMIN";
 
   if (!name || !email || !role) return { error: "All fields are required." };

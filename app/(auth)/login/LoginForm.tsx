@@ -30,14 +30,9 @@ export function LoginForm({ resetSuccess }: { resetSuccess?: boolean }) {
           required
         />
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="login-password" className="text-sm font-medium text-foreground">
-              Password
-            </label>
-            <Link href="/forgot-password" className="text-xs text-primary hover:underline">
-              Forgot password?
-            </Link>
-          </div>
+          <label htmlFor="login-password" className="text-sm font-medium text-foreground">
+            Password
+          </label>
           <div className="relative">
             <input
               id="login-password"
@@ -56,6 +51,9 @@ export function LoginForm({ resetSuccess }: { resetSuccess?: boolean }) {
             </button>
           </div>
         </div>
+        <Link href="/forgot-password" className="text-xs text-primary hover:underline self-start">
+          Forgot password?
+        </Link>
         {state?.error && (
           <p className="text-sm text-danger text-center">{state.error}</p>
         )}

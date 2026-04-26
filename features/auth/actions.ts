@@ -7,12 +7,13 @@ import bcrypt from "bcryptjs";
 import { getUserByEmail, getUserById, updateUser } from "@/db/queries/users";
 import { signResetToken, verifyResetToken } from "@/lib/reset-token";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { logger } from "@/lib/logger";
 
 export async function loginAction(
   _prev: { error: string } | { success: true } | null,
   formData: FormData
 ): Promise<{ error: string }> {
-  const email = formData.get("email") as string;
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
 
   try {
@@ -39,14 +40,22 @@ export async function forgotPasswordAction(
 
   // Always return success to avoid revealing whether an account exists
   const user = await getUserByEmail(email);
-  if (!user || !user.isActive) return { success: true };
+  if (!user || !user.isActive) {
+    logger.warn("[forgot-password] User not found or inactive", { email });
+    return { success: true };
+  }
 
   const token = await signResetToken(user.id, user.email);
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
   try {
     await sendPasswordResetEmail(user.email, user.name, resetUrl);
-  } catch {
+    logger.info("[forgot-password] Reset email sent", { userId: user.id });
+  } catch (err) {
+    logger.error("[forgot-password] Failed to send reset email", {
+      userId: user.id,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return { error: "Failed to send reset email. Please try again." };
   }
 

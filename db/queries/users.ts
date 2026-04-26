@@ -1,4 +1,4 @@
-import { eq, or } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import { db } from "../client";
 import { users, type User, type NewUser } from "../schema/users";
 import { partnerTiers, type PartnerTier } from "../schema/partner-tiers";
@@ -34,7 +34,8 @@ export const getUserById = async (id: string): Promise<User | null> => {
 };
 
 export const getUserByEmail = async (email: string): Promise<User | null> => {
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const normalized = email.trim().toLowerCase();
+  const result = await db.select().from(users).where(sql`lower(${users.email}) = ${normalized}`).limit(1);
   return result[0] ?? null;
 };
 
