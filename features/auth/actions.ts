@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/lib/auth";
 import { AuthError } from "next-auth";
@@ -46,7 +47,10 @@ export async function forgotPasswordAction(
   }
 
   const token = await signResetToken(user.id, user.email);
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const resetUrl = `${proto}://${host}/reset-password?token=${token}`;
 
   try {
     await sendPasswordResetEmail(user.email, user.name, resetUrl);
