@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAccount, useSendTransaction } from "wagmi";
 import { parseUnits, encodeFunctionData } from "viem";
 import { Button } from "@/components/ui/Button";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { BuyConfirmModal } from "./BuyConfirmModal";
 import { TransactionPendingModal } from "./TransactionPendingModal";
 import { createBplayPurchaseAction, recordTxHashAction } from "@/features/purchases/actions";
 import { QUICK_BUY_AMOUNTS, usdcToBplay, formatBplay } from "@/lib/exchange";
@@ -27,15 +27,16 @@ interface QuickBuyButtonsProps {
 
 export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, transferAddress }: QuickBuyButtonsProps) {
   const recipient = (transferAddress ?? treasuryAddress) as `0x${string}`;
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const [txHash, setTxHash] = useState<string>();
-  const [loading, setLoading] = useState<number | null>(null);
 
-  const handleBuy = async (usdcAmount: number) => {
+  const handleConfirm = async (usdcAmount: number) => {
     if (!address) return;
-    setLoading(usdcAmount);
+    setConfirming(true);
     try {
       const { purchaseId } = await createBplayPurchaseAction(usdcAmount, address, recipient);
 
@@ -45,6 +46,7 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, tr
         args: [recipient, parseUnits(String(usdcAmount), 6)],
       });
 
+      setSelectedAmount(null);
       setPending(true);
       const hash = await sendTransactionAsync({
         to: usdcContractAddress as `0x${string}`,
@@ -56,18 +58,9 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, tr
     } catch {
       setPending(false);
     } finally {
-      setLoading(null);
+      setConfirming(false);
     }
   };
-
-  if (!isConnected) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-4">
-        <p className="text-sm text-muted">Connect your wallet to buy BPLAY</p>
-        <ConnectButton />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -76,9 +69,8 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, tr
           <Button
             key={amount}
             variant="outline"
-            loading={loading === amount}
             disabled={pending}
-            onClick={() => handleBuy(amount)}
+            onClick={() => setSelectedAmount(amount)}
             className="flex flex-col h-auto py-3"
           >
             <span className="text-base font-bold">${amount} USDC</span>
@@ -86,6 +78,14 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, tr
           </Button>
         ))}
       </div>
+      <BuyConfirmModal
+        open={selectedAmount !== null}
+        onOpenChange={(open) => { if (!open) setSelectedAmount(null); }}
+        amount={selectedAmount}
+        rate={rate}
+        onConfirm={handleConfirm}
+        loading={confirming}
+      />
       <TransactionPendingModal open={pending} txHash={txHash} />
     </>
   );

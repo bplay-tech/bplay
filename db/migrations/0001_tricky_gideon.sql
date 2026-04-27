@@ -11,5 +11,5 @@ CREATE TABLE "invitation_tokens" (
 ALTER TABLE "bplay_purchases" ADD COLUMN "recipient_address" text;--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "transfer_address" text;--> statement-breakpoint
 ALTER TABLE "invitation_tokens" ADD CONSTRAINT "invitation_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "exchange_rates" DROP COLUMN "usdc_contract_address";--> statement-breakpoint
-ALTER TABLE "exchange_rates" DROP COLUMN "treasury_address";
+ALTER TABLE "exchange_rates" DROP COLUMN IF EXISTS "usdc_contract_address";--> statement-breakpoint
+ALTER TABLE "exchange_rates" DROP COLUMN IF EXISTS "treasury_address";

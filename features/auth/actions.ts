@@ -9,12 +9,15 @@ import { getUserByEmail, getUserById, updateUser } from "@/db/queries/users";
 import { signResetToken, verifyResetToken } from "@/lib/reset-token";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
+import { emailSchema } from "@/lib/zod";
 
 export async function loginAction(
   _prev: { error: string } | { success: true } | null,
   formData: FormData
 ): Promise<{ error: string }> {
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const emailResult = emailSchema.safeParse(formData.get("email"));
+  if (!emailResult.success) return { error: "Valid email is required." };
+  const email = emailResult.data;
   const password = formData.get("password") as string;
 
   try {
@@ -36,8 +39,9 @@ export async function forgotPasswordAction(
   _prev: { error?: string; success?: boolean } | null,
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
-  if (!email) return { error: "Email is required." };
+  const emailResult = emailSchema.safeParse(formData.get("email"));
+  if (!emailResult.success) return { error: emailResult.error.issues[0].message };
+  const email = emailResult.data;
 
   // Always return success to avoid revealing whether an account exists
   const user = await getUserByEmail(email);
@@ -81,7 +85,7 @@ export async function resetPasswordAction(
   if (!payload) return { error: "This reset link has expired or is invalid." };
 
   const user = await getUserById(payload.userId);
-  if (!user || user.email !== payload.email) return { error: "Reset link is no longer valid." };
+  if (!user || user.email.toLowerCase() !== payload.email.toLowerCase()) return { error: "Reset link is no longer valid." };
 
   const passwordHash = await bcrypt.hash(password, 12);
   await updateUser(payload.userId, { passwordHash });

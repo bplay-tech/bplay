@@ -11,6 +11,7 @@ import { upsertSettings } from "@/db/queries/user-settings";
 import { upsertNotifications } from "@/db/queries/user-notifications";
 import { generateUniqueReferralCode } from "@/lib/referral";
 import { sendWelcomeEmail } from "@/lib/email";
+import { emailSchema } from "@/lib/zod";
 
 export async function registerViaReferralAction(
   referralCode: string,
@@ -18,11 +19,12 @@ export async function registerViaReferralAction(
   formData: FormData
 ): Promise<{ error: string } | null> {
   const name = (formData.get("name") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const emailResult = emailSchema.safeParse(formData.get("email"));
   const password = formData.get("password") as string;
   const confirm = formData.get("confirm") as string;
 
-  if (!name || !email || !password || !confirm) return { error: "All fields are required." };
+  if (!name || !emailResult.success || !password || !confirm) return { error: "All fields are required." };
+  const email = emailResult.data;
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
   if (password !== confirm) return { error: "Passwords do not match." };
 
@@ -42,7 +44,7 @@ export async function registerViaReferralAction(
     email,
     passwordHash,
     name,
-    role: "SELLER",
+    role: "USER",
     partnerTierId: bronzeTier.id,
     referralCode: newReferralCode,
     isActive: true,

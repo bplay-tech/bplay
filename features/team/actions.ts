@@ -10,18 +10,20 @@ import { upsertNotifications } from "@/db/queries/user-notifications";
 import { generateUniqueReferralCode } from "@/lib/referral";
 import { signInviteToken } from "@/lib/invite-token";
 import { sendInvitationEmail } from "@/lib/email";
-import { walletAddressSchema } from "@/lib/zod";
+import { emailSchema, walletAddressSchema } from "@/lib/zod";
 
 export async function createUserAction(
   _prev: { error: string } | { success: true } | null,
   formData: FormData
 ): Promise<{ error: string } | { success: true }> {
-  const actor = await verifyRole(["SUPER_ADMIN"]);
+  const actor = await verifyRole(["ADMIN", "SUPER_ADMIN"]);
   const name = (formData.get("name") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const role = formData.get("role") as "SELLER" | "ADMIN";
+  const emailResult = emailSchema.safeParse(formData.get("email"));
+  const role = formData.get("role") as "USER" | "ADMIN";
 
-  if (!name || !email || !role) return { error: "All fields are required." };
+  if (!name || !emailResult.success || !role) return { error: "All fields are required." };
+  const email = emailResult.data;
+  if (actor.role === "ADMIN" && role !== "USER") return { error: "Admins can only create user accounts." };
 
   const bronzeTier = await getPartnerTierByName("Bronze");
   if (!bronzeTier) return { error: "Bronze tier not found. Run db:seed first." };
@@ -72,7 +74,7 @@ export async function updateUserTierAction(userId: string, tierName: string): Pr
 
 export async function updateUserRoleAction(
   userId: string,
-  role: "SELLER" | "ADMIN"
+  role: "USER" | "ADMIN"
 ): Promise<{ error: string } | { success: true }> {
   await verifyRole(["SUPER_ADMIN"]);
   await updateUser(userId, { role });

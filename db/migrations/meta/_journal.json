@@ -15,6 +15,13 @@
       "when": 1776991038303,
       "tag": "0001_tricky_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745654400000,
+      "tag": "0002_rename_seller_to_user",
+      "breakpoints": true
     }
   ]
 }

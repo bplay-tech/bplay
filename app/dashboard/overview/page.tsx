@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight, DollarSign, Clock, Target, Zap, UserPlus, Copy } from "lucide-react";
+import { ArrowUpRight, ChevronRight, DollarSign, Clock, Target, Zap, UserPlus, Copy, Newspaper, ShoppingCart } from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import { getDashboardStats, getTransactionsByUser } from "@/db/queries/transactions";
 import { getBplayBalance } from "@/db/queries/bplay-purchases";
@@ -11,28 +11,134 @@ import { formatUsd, formatBplay } from "@/lib/exchange";
 import { TIER_DISPLAY, type TierName } from "@/lib/tiers";
 import { CopyButton } from "@/components/ui/CopyButton";
 
+// Static company news — replace with a DB query when a news system exists
+const COMPANY_NEWS = [
+  {
+    id: "1",
+    title: "BPLAY Token Launch on Polygon Mainnet",
+    date: "2026-04-20",
+    summary: "We are thrilled to announce the official launch of BPLAY tokens on the Polygon mainnet. Early holders receive bonus rewards.",
+  },
+  {
+    id: "2",
+    title: "New Partnership with GameFi Alliance",
+    date: "2026-04-15",
+    summary: "Bplay has joined the GameFi Alliance, opening doors to cross-platform token utility across 50+ partner games.",
+  },
+  {
+    id: "3",
+    title: "Q2 2026 Roadmap Released",
+    date: "2026-04-10",
+    summary: "Our Q2 roadmap includes staking rewards, a mobile wallet, and expanded BPLAY utility across the Bplay ecosystem.",
+  },
+];
+
 export default async function OverviewPage() {
   const user = await verifySession();
+  const isUser = user.role === "USER";
 
-  const [stats, bplayBalance, referralCount, tier, rate, recentTxns] = await Promise.all([
-    getDashboardStats(user.id),
+  const [bplayBalance, rate] = await Promise.all([
     getBplayBalance(user.id),
+    getCurrentExchangeRate(),
+  ]);
+
+  const currentRate = parseFloat(rate?.rate ?? "0");
+  const bplayUsdValue = bplayBalance * currentRate;
+  const firstName = user.name?.split(" ")[0] ?? "there";
+
+  if (isUser) {
+    return (
+      <div className="flex flex-col gap-5">
+        {/* Welcome Banner */}
+        <div
+          className="relative rounded-2xl overflow-hidden p-7"
+          style={{
+            background: "linear-gradient(135deg, #1a1a3e 0%, #16213e 40%, #0d3b3b 100%)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <div
+            className="absolute top-0 right-0 w-80 h-full pointer-events-none"
+            style={{ background: "radial-gradient(ellipse at top right, rgba(0,180,150,0.18) 0%, transparent 70%)" }}
+          />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Welcome, {firstName}!</h1>
+              <p className="text-white/60 mt-1 text-sm">Your BPLAY token dashboard</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Balance Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="flex items-start justify-between">
+              <p className="text-xs text-white/40 font-medium tracking-wide">BPLAY Balance</p>
+              <div className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: "rgba(124,92,255,0.2)" }}>
+                <Zap className="h-4 w-4 text-purple-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{bplayBalance > 0 ? bplayBalance.toLocaleString() : "0"} BPLAY</p>
+              <p className="text-xs text-white/40 mt-1">{formatUsd(bplayUsdValue)}</p>
+            </div>
+          </div>
+
+          <div
+            className="rounded-2xl p-5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
+            style={{ background: "linear-gradient(135deg, rgba(124,92,255,0.3) 0%, rgba(0,180,150,0.2) 100%)", border: "1px solid rgba(124,92,255,0.4)" }}
+          >
+            <ShoppingCart className="h-8 w-8 text-purple-300" />
+            <p className="text-sm font-semibold text-white">Buy BPLAY Tokens</p>
+            <Link
+              href="/dashboard/buy"
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white"
+              style={{ background: "rgba(124,92,255,0.6)" }}
+            >
+              Go to Buy
+            </Link>
+          </div>
+        </div>
+
+        {/* Company News */}
+        <div className="rounded-2xl p-6" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Newspaper className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold text-white">Company News</h2>
+          </div>
+          <div className="flex flex-col divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+            {COMPANY_NEWS.map((item) => (
+              <div key={item.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-white">{item.title}</p>
+                    <p className="text-xs text-white/40 mt-1">{item.summary}</p>
+                  </div>
+                  <span className="text-xs text-white/30 shrink-0">{item.date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ADMIN / SUPER_ADMIN view
+  const [stats, referralCount, tier, recentTxns] = await Promise.all([
+    getDashboardStats(user.id),
     countReferrals(user.id),
     getPartnerTierByName(user.tierName),
-    getCurrentExchangeRate(),
     getTransactionsByUser(user.id),
   ]);
 
   const recent = recentTxns.slice(-5).reverse();
-  const currentRate = parseFloat(rate?.rate ?? "0");
-  const bplayUsdValue = bplayBalance * currentRate;
   const conversionRate = referralCount > 0
     ? ((stats.totalSales / referralCount) * 100).toFixed(1)
     : "0.0";
   const referralUrl = buildReferralUrl(user.referralCode, process.env.NEXTAUTH_URL ?? "http://localhost:3000");
   const commissionRate = parseFloat(tier?.commissionRate ?? "0");
   const tierDisplay = TIER_DISPLAY[user.tierName as TierName];
-  const firstName = user.name?.split(" ")[0] ?? "Partner";
 
   return (
     <div className="flex flex-col gap-5">
@@ -45,7 +151,6 @@ export default async function OverviewPage() {
           border: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        {/* subtle radial glow top-right */}
         <div
           className="absolute top-0 right-0 w-80 h-full pointer-events-none"
           style={{ background: "radial-gradient(ellipse at top right, rgba(0,180,150,0.18) 0%, transparent 70%)" }}
@@ -79,7 +184,6 @@ export default async function OverviewPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* BPLAY Balance */}
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-start justify-between">
             <p className="text-xs text-white/40 font-medium tracking-wide">BPLAY Balance</p>
@@ -93,7 +197,6 @@ export default async function OverviewPage() {
           </div>
         </div>
 
-        {/* Total Earnings */}
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-start justify-between">
             <p className="text-xs text-white/40 font-medium tracking-wide">Total Earnings</p>
@@ -110,7 +213,6 @@ export default async function OverviewPage() {
           </div>
         </div>
 
-        {/* Pending Commission */}
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-start justify-between">
             <p className="text-xs text-white/40 font-medium tracking-wide">Pending Commission</p>
@@ -124,7 +226,6 @@ export default async function OverviewPage() {
           </div>
         </div>
 
-        {/* Conversion Rate */}
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-start justify-between">
             <p className="text-xs text-white/40 font-medium tracking-wide">Conversion Rate</p>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BplayLogo } from "@/components/ui/BplayLogo";
 
 export default function Home() {
   return (
@@ -11,6 +12,17 @@ export default function Home() {
             "radial-gradient(ellipse 60% 70% at 15% 50%, rgba(90,60,200,0.18) 0%, transparent 70%)",
         }}
       />
+
+      {/* Top bar */}
+      <header className="relative z-10 flex items-center justify-between px-8 py-5">
+        <BplayLogo size="md" />
+        <Link
+          href="/login"
+          className="text-sm font-medium text-white transition-opacity hover:opacity-70"
+        >
+          Login
+        </Link>
+      </header>
 
       {/* Main content */}
       <main className="flex flex-1 flex-col items-center justify-center text-center px-6">
@@ -40,14 +52,6 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="relative z-10 flex items-center justify-between px-8 py-6 text-xs" style={{ color: "#9CA3AF" }}>
-        <div className="flex items-center gap-1.5 font-semibold text-white">
-          <span>bplay</span>
-          <span className="flex gap-0.5">
-            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "#7C5CFF" }} />
-            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "#6D9EFF" }} />
-          </span>
-        </div>
-
         <nav className="flex gap-6">
           {["Terms", "Privacy", "Risk"].map((label) => (
             <a

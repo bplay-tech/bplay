@@ -1,3 +1,4 @@
+import { BplayLogo } from "@/components/ui/BplayLogo";
 import { Card } from "@/components/ui/Card";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 
@@ -13,11 +14,8 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
       <div className="w-full max-w-md">
 
         <div className="flex flex-col items-center mb-8">
-          <div className="h-12 w-12 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">B</span>
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">BPLAY</h1>
-          <span className="mt-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+          <BplayLogo size="xl" />
+          <span className="mt-3 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
             Partner Zone
           </span>
         </div>

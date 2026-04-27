@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { BplayLogo } from "@/components/ui/BplayLogo";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { TIER_DISPLAY, type TierName } from "@/lib/tiers";
 
@@ -28,13 +29,13 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/dashboard/overview", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Sales & Referrals", href: "/dashboard/sales", icon: <TrendingUp className="h-4 w-4" /> },
-  { label: "Team", href: "/dashboard/team", icon: <Users className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
-  { label: "Payouts", href: "/dashboard/payouts", icon: <Wallet className="h-4 w-4" /> },
   { label: "Buy BPLAY", href: "/dashboard/buy", icon: <Coins className="h-4 w-4" /> },
-  { label: "Settings", href: "/dashboard/settings", icon: <Settings className="h-4 w-4" /> },
+  { label: "Sales & Referrals", href: "/dashboard/sales", icon: <TrendingUp className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Payouts", href: "/dashboard/payouts", icon: <Wallet className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Team", href: "/dashboard/team", icon: <Users className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
   { label: "Purchases", href: "/dashboard/purchases", icon: <Package className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
   { label: "Exchange Rate", href: "/dashboard/exchange-rate", icon: <RefreshCw className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
+  { label: "Settings", href: "/dashboard/settings", icon: <Settings className="h-4 w-4" /> },
 ];
 
 interface TopNavProps {
@@ -61,10 +62,7 @@ export function TopNav({ name, role, tierName }: TopNavProps) {
       {/* Top bar: logo + user */}
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-linear-to-br from-primary to-accent flex items-center justify-center">
-            <TrendingUp className="h-4 w-4 text-white" />
-          </div>
-          <span className="text-white font-bold text-lg tracking-tight">BPLAY</span>
+          <BplayLogo size="md" />
           <span className="px-2.5 py-0.5 rounded-full border border-white/20 text-xs text-white/60 font-medium">
             Partner Zone
           </span>

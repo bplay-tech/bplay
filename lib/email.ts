@@ -2,6 +2,10 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const BRAND_COLOR = "#7C5CFF";
+
+const logoHtml = `<div style="margin-bottom:24px;white-space:nowrap"><span style="color:#111827;font-weight:600;font-size:20px;letter-spacing:-0.3px">bplay</span><span style="display:inline-block;width:8px;height:8px;background:#7C5CFF;border-radius:50%;margin-left:5px;vertical-align:middle;position:relative;top:-1px"></span><span style="display:inline-block;width:8px;height:8px;background:#7C5CFF;border-radius:50%;margin-left:3px;vertical-align:middle;position:relative;top:-1px"></span></div>`;
+
 export const sendInvitationEmail = async (
   to: string,
   name: string,
@@ -13,18 +17,21 @@ export const sendInvitationEmail = async (
     subject: "You've been invited to BPLAY Partner Portal",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-        <h1 style="font-size:22px;font-weight:700;margin-bottom:8px">Welcome to BPLAY, ${name}!</h1>
-        <p style="color:#6b7280;margin-bottom:24px">
+        ${logoHtml}
+        <h1 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111827">Welcome to BPLAY, ${name}!</h1>
+        <p style="color:#6b7280;margin-bottom:24px;line-height:1.6">
           You've been invited to join the BPLAY Partner Portal. Click the button below to set your password and activate your account.
         </p>
         <a href="${inviteUrl}"
-           style="display:inline-block;background:#2563eb;color:#fff;font-weight:600;
+           style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-weight:600;
                   padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px">
           Set My Password
         </a>
-        <p style="color:#9ca3af;font-size:12px;margin-top:24px">
-          This link expires in 72 hours. If you did not expect this invitation, you can safely ignore this email.
-        </p>
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb">
+          <p style="color:#9ca3af;font-size:12px;margin:0">
+            This link expires in 72 hours. If you did not expect this invitation, you can safely ignore this email.
+          </p>
+        </div>
       </div>
     `,
   });
@@ -44,12 +51,7 @@ export const sendWelcomeEmail = async (
     subject: "Your BPLAY account is ready",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-        <div style="margin-bottom:24px">
-          <div style="display:inline-block;background:linear-gradient(135deg,#2563eb,#0ea5e9);
-                      border-radius:10px;padding:10px 16px">
-            <span style="color:#fff;font-weight:700;font-size:18px">BPLAY</span>
-          </div>
-        </div>
+        ${logoHtml}
         <h1 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111827">
           Welcome, ${name}!
         </h1>
@@ -61,7 +63,7 @@ export const sendWelcomeEmail = async (
           You can now log in and purchase BPLAY tokens at any time.
         </p>
         <a href="${dashboardUrl}"
-           style="display:inline-block;background:#2563eb;color:#fff;font-weight:600;
+           style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-weight:600;
                   padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px">
           Go to Dashboard
         </a>
@@ -89,12 +91,7 @@ export const sendPasswordResetEmail = async (
     subject: "Reset your BPLAY password",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-        <div style="margin-bottom:24px">
-          <div style="display:inline-block;background:linear-gradient(135deg,#2563eb,#0ea5e9);
-                      border-radius:10px;padding:10px 16px">
-            <span style="color:#fff;font-weight:700;font-size:18px">BPLAY</span>
-          </div>
-        </div>
+        ${logoHtml}
         <h1 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111827">
           Reset your password
         </h1>
@@ -106,7 +103,7 @@ export const sendPasswordResetEmail = async (
           This link expires in <strong style="color:#111827">1 hour</strong>.
         </p>
         <a href="${resetUrl}"
-           style="display:inline-block;background:#2563eb;color:#fff;font-weight:600;
+           style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-weight:600;
                   padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px">
           Reset Password
         </a>

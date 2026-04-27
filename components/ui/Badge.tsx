@@ -39,7 +39,7 @@ const STATUS_MAP: Record<string, VariantProps<typeof badgeVariants>["variant"]> 
   SALE: "purple",
   REFERRAL: "info",
   PAYOUT: "gray",
-  SELLER: "gray",
+  USER: "gray",
   ADMIN: "info",
   SUPER_ADMIN: "purple",
 };

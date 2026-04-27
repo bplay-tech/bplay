@@ -16,10 +16,12 @@ import type { UserWithTier } from "@/db/queries/users";
 
 interface TeamClientProps {
   members: UserWithTier[];
-  isSuperAdmin: boolean;
+  role: "USER" | "ADMIN" | "SUPER_ADMIN";
 }
 
-export function TeamClient({ members, isSuperAdmin }: TeamClientProps) {
+export function TeamClient({ members, role }: TeamClientProps) {
+  const isSuperAdmin = role === "SUPER_ADMIN";
+  const canManageMembers = role === "ADMIN" || role === "SUPER_ADMIN";
   const [modalOpen, setModalOpen] = useState(false);
   const [transferModal, setTransferModal] = useState<{ userId: string; current: string | null } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -93,13 +95,13 @@ export function TeamClient({ members, isSuperAdmin }: TeamClientProps) {
                           label:
                             changingRoleId === r.id
                               ? "Updating…"
-                              : r.role === "SELLER"
+                              : r.role === "USER"
                               ? "Promote to Admin"
-                              : "Demote to Seller",
+                              : "Demote to User",
                           disabled: changingRoleId === r.id,
                           onClick: () => {
                             setChangingRoleId(r.id);
-                            const newRole = r.role === "SELLER" ? "ADMIN" : "SELLER";
+                            const newRole = r.role === "USER" ? "ADMIN" : "USER";
                             startTransition(async () => {
                               const result = await updateUserRoleAction(r.id, newRole);
                               setChangingRoleId(null);
@@ -133,13 +135,13 @@ export function TeamClient({ members, isSuperAdmin }: TeamClientProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {isSuperAdmin && (
+      {canManageMembers && (
         <div className="flex justify-end">
           <Button onClick={() => setModalOpen(true)}>Add Member</Button>
         </div>
       )}
       <Table data={members} columns={columns} keyExtractor={(r) => r.id} emptyMessage="No team members found." />
-      {isSuperAdmin && <CreateMemberModal open={modalOpen} onOpenChange={setModalOpen} />}
+      {canManageMembers && <CreateMemberModal open={modalOpen} onOpenChange={setModalOpen} isSuperAdmin={isSuperAdmin} />}
       {transferModal && (
         <TransferAddressModal
           userId={transferModal.userId}

@@ -8,26 +8,29 @@ import { Select } from "@/components/ui/Select";
 import { createUserAction } from "@/features/team/actions";
 
 const ROLE_OPTIONS = [
-  { value: "SELLER", label: "Seller" },
+  { value: "USER", label: "User" },
   { value: "ADMIN", label: "Admin" },
 ];
 
 interface CreateMemberModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  isSuperAdmin?: boolean;
 }
 
-export function CreateMemberModal({ open, onOpenChange }: CreateMemberModalProps) {
+export function CreateMemberModal({ open, onOpenChange, isSuperAdmin = false }: CreateMemberModalProps) {
   const [state, action, pending] = useActionState(createUserAction, null);
-  const [role, setRole] = useState("SELLER");
+  const [role, setRole] = useState("USER");
 
   return (
     <Modal open={open} onOpenChange={onOpenChange} title="Invite Team Member">
       <form action={action} className="flex flex-col gap-4">
         <Input name="name" label="Full Name" placeholder="Jane Doe" required />
         <Input name="email" label="Email" type="email" placeholder="jane@example.com" required />
-        <Select label="Role" value={role} onValueChange={setRole} options={ROLE_OPTIONS} />
-        <input type="hidden" name="role" value={role} />
+        {isSuperAdmin && (
+          <Select label="Role" value={role} onValueChange={setRole} options={ROLE_OPTIONS} />
+        )}
+        <input type="hidden" name="role" value={isSuperAdmin ? role : "USER"} />
         {state && "error" in state && <p className="text-sm text-danger">{state.error}</p>}
         {state && "success" in state && (
           <p className="text-sm text-success">Invitation email sent successfully!</p>
