@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 w-full sm:max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted mt-1">Manage your profile, payouts, and notifications</p>

@@ -47,12 +47,12 @@ export function PayoutsClient({ availableBalance, history, pendingAll, isSuperAd
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm text-muted">Available Balance</p>
           <p className="text-3xl font-bold text-foreground">{formatUsd(availableBalance)}</p>
         </div>
-        <Button onClick={() => setModalOpen(true)} disabled={availableBalance < 50}>
+        <Button onClick={() => setModalOpen(true)} disabled={availableBalance < 50} className="w-full sm:w-auto">
           Request Payout
         </Button>
       </div>

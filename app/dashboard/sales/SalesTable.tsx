@@ -73,19 +73,17 @@ export function SalesTable() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex gap-2">
-          <input
-            type="date"
-            className="h-10 rounded-lg border border-card-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value ? new Date(e.target.value) : undefined }))}
-          />
-          <input
-            type="date"
-            className="h-10 rounded-lg border border-card-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value ? new Date(e.target.value) : undefined }))}
-          />
-        </div>
+      <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+        <input
+          type="date"
+          className="h-10 flex-1 min-w-32.5 rounded-lg border border-card-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value ? new Date(e.target.value) : undefined }))}
+        />
+        <input
+          type="date"
+          className="h-10 flex-1 min-w-32.5 rounded-lg border border-card-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value ? new Date(e.target.value) : undefined }))}
+        />
         <Select
           value={filters.type ?? "ALL"}
           onValueChange={(v) => setFilters((f) => ({ ...f, type: v === "ALL" ? undefined : v as TransactionFilters["type"] }))}
@@ -100,7 +98,8 @@ export function SalesTable() {
         />
         <Button variant="outline" size="sm" onClick={() => exportCsv(data)} disabled={data.length === 0}>
           <Download className="h-4 w-4" />
-          Export CSV
+          <span className="hidden xs:inline">Export CSV</span>
+          <span className="xs:hidden">Export</span>
         </Button>
       </div>
       {isLoading ? (

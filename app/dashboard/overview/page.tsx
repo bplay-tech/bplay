@@ -155,9 +155,9 @@ export default async function OverviewPage() {
           className="absolute top-0 right-0 w-80 h-full pointer-events-none"
           style={{ background: "radial-gradient(ellipse at top right, rgba(0,180,150,0.18) 0%, transparent 70%)" }}
         />
-        <div className="relative flex items-center justify-between">
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-white">Welcome back, {firstName}!</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Welcome back, {firstName}!</h1>
             <p className="text-white/60 mt-1 text-sm">
               You&apos;re earning{" "}
               <span className="font-semibold" style={{ color: "#a78bfa" }}>
@@ -168,7 +168,7 @@ export default async function OverviewPage() {
           </div>
           {tierDisplay && (
             <div
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold shrink-0"
               style={{
                 border: "1px solid rgba(167,139,250,0.5)",
                 background: "rgba(124,92,255,0.15)",
@@ -248,17 +248,17 @@ export default async function OverviewPage() {
         </div>
         <p className="text-xs text-white/40 mb-4">Share this link to earn {commissionRate}% on every token purchase</p>
 
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-2 sm:gap-3 mb-6">
           <div
-            className="flex-1 flex items-center px-4 py-3 rounded-xl text-sm font-mono text-white/50 truncate"
+            className="flex-1 min-w-0 flex items-center px-3 sm:px-4 py-3 rounded-xl text-xs sm:text-sm font-mono text-white/50"
             style={{ background: "#0B0F1A", border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            {referralUrl}
+            <span className="truncate">{referralUrl}</span>
           </div>
           <CopyButton text={referralUrl} className="shrink-0" />
         </div>
 
-        <div className="grid grid-cols-4 gap-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           {[
             { label: "Total Clicks", value: referralCount * 4 || 0 },
             { label: "Conversions", value: stats.totalSales },

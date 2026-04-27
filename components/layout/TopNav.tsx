@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -50,6 +51,7 @@ function getInitials(name: string) {
 
 export function TopNav({ name, role, tierName }: TopNavProps) {
   const pathname = usePathname();
+  const [navOpen, setNavOpen] = useState(false);
   const tierDisplay = TIER_DISPLAY[tierName as TierName];
   const roleLabel = role.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -57,25 +59,31 @@ export function TopNav({ name, role, tierName }: TopNavProps) {
     (item) => !item.roles || item.roles.includes(role)
   );
 
+  const activeItem = visibleItems.find(
+    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
+  );
+
   return (
     <header className="sticky top-0 z-40 bg-bg border-b border-white/5">
       {/* Top bar: logo + user */}
-      <div className="flex items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-3">
-          <BplayLogo size="md" />
-          <span className="px-2.5 py-0.5 rounded-full border border-white/20 text-xs text-white/60 font-medium">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 gap-3">
+        {/* Left: logo + badge */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <BplayLogo size="md" className="shrink-0" />
+          <span className="px-2 sm:px-2.5 py-0.5 rounded-full border border-white/20 text-xs text-white/60 font-medium whitespace-nowrap">
             Partner Zone
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button className="relative p-2 rounded-lg text-white/50 hover:text-white transition-colors">
+        {/* Right: bell + user */}
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <button className="p-2 rounded-lg text-white/50 hover:text-white transition-colors">
             <Bell className="h-5 w-5" />
           </button>
           <DropdownMenu
             trigger={
-              <button className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-                <div className="h-9 w-9 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
+              <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0">
                   <span className="text-sm font-bold text-primary">{getInitials(name)}</span>
                 </div>
                 <div className="hidden sm:flex flex-col items-start">
@@ -92,27 +100,75 @@ export function TopNav({ name, role, tierName }: TopNavProps) {
         </div>
       </div>
 
-      {/* Nav tabs */}
-      <nav className="flex items-center gap-1 px-6 pb-0">
-        {visibleItems.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium transition-all",
-                active
-                  ? "bg-primary text-white shadow-[0_0_20px_rgba(124,92,255,0.3)]"
-                  : "text-white/50 hover:text-white/80 hover:bg-white/5"
-              )}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Mobile nav: dropdown selector — visible below sm */}
+      <div className="sm:hidden px-4 pb-3">
+        <button
+          onClick={() => setNavOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+        >
+          <div className="flex items-center gap-2.5 text-white">
+            {activeItem?.icon}
+            <span>{activeItem?.label ?? "Menu"}</span>
+          </div>
+          <ChevronDown
+            className={cn("h-4 w-4 text-white/40 transition-transform duration-200", navOpen && "rotate-180")}
+          />
+        </button>
+
+        {navOpen && (
+          <div
+            className="mt-1.5 rounded-xl border border-white/10 overflow-hidden"
+            style={{ background: "#121826" }}
+          >
+            {visibleItems.map((item) => {
+              const active = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setNavOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-b border-white/5 last:border-0",
+                    active
+                      ? "bg-primary/20 text-primary"
+                      : "text-white/50 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop nav: horizontal tabs — visible from sm up */}
+      <div className="hidden sm:block relative">
+        <div className="overflow-x-auto scrollbar-hide">
+          <nav className="flex items-center gap-1 px-6 pb-0 min-w-max pr-8">
+            {visibleItems.map((item) => {
+              const active = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium transition-all whitespace-nowrap shrink-0",
+                    active
+                      ? "bg-primary text-white shadow-[0_0_20px_rgba(124,92,255,0.3)]"
+                      : "text-white/50 hover:text-white/80 hover:bg-white/5"
+                  )}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-linear-to-l from-bg to-transparent" />
+      </div>
     </header>
   );
 }
