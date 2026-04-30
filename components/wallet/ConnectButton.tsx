@@ -5,6 +5,7 @@ import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Button } from "@/components/ui/Button";
 import { formatAddress } from "@/lib/utils";
 import { wagmiConfig } from "@/lib/wagmi";
+import { saveWalletAddressAction } from "@/features/wallet/actions";
 
 const connector = wagmiConfig.connectors[0];
 
@@ -19,6 +20,10 @@ export function ConnectButton() {
     connect(
       { connector },
       {
+        onSuccess: (data) => {
+          const addr = data.accounts[0];
+          if (addr) saveWalletAddressAction(addr).catch(() => null);
+        },
         onError: (e) => setError(e.message),
       }
     );

@@ -25,7 +25,7 @@ export function RequestPayoutModal({ open, onOpenChange, availableBalance }: Req
   return (
     <Modal open={open} onOpenChange={onOpenChange} title="Request Payout" description={`Available balance: $${availableBalance.toFixed(2)}`}>
       <form action={action} className="flex flex-col gap-4">
-        <Input name="amount" type="number" label="Amount (USD)" placeholder="50.00" min="50" max={availableBalance} step="0.01" required />
+        <Input name="amount" type="number" label="Amount (USD)" placeholder="0.00" min="0.01" max={availableBalance} step="0.01" required />
         <Select label="Payout Method" value={method} onValueChange={setMethod} options={METHOD_OPTIONS} />
         <input type="hidden" name="payoutMethod" value={method} />
         {method === "USDC" && (

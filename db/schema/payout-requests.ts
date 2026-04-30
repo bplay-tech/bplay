@@ -13,6 +13,7 @@ export const payoutRequests = pgTable("payout_requests", {
   status: payoutStatusEnum("status").notNull().default("pending"),
   reviewedBy: uuid("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
+  txHash: text("tx_hash"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

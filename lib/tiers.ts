@@ -17,6 +17,12 @@ export const TIER_DISPLAY = {
     bg: "bg-yellow-500/10",
     border: "border-yellow-500/30",
   },
+  Platinum: {
+    label: "Platinum Partner",
+    color: "text-cyan-400",
+    bg: "bg-cyan-400/10",
+    border: "border-cyan-400/30",
+  },
 } as const;
 
 export type TierName = keyof typeof TIER_DISPLAY;

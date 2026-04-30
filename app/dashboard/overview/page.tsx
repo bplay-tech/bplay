@@ -1,45 +1,37 @@
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight, DollarSign, Clock, Target, Zap, UserPlus, Copy, Newspaper, ShoppingCart } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronRight,
+  DollarSign,
+  Clock,
+  Target,
+  Zap,
+  UserPlus,
+  Copy,
+  Newspaper,
+  ShoppingCart,
+} from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import { getDashboardStats, getTransactionsByUser } from "@/db/queries/transactions";
-import { getBplayBalance } from "@/db/queries/bplay-purchases";
+import { getBplayBalance, getTeamTokensSold, getTokenPurchaseHistory } from "@/db/queries/bplay-purchases";
 import { countReferrals } from "@/db/queries/affiliations";
 import { getPartnerTierByName } from "@/db/queries/partner-tiers";
 import { getCurrentExchangeRate } from "@/db/queries/exchange-rates";
+import { getRecentSystemMessages } from "@/db/queries/system-messages";
 import { buildReferralUrl } from "@/lib/referral";
 import { formatUsd, formatBplay } from "@/lib/exchange";
 import { TIER_DISPLAY, type TierName } from "@/lib/tiers";
 import { CopyButton } from "@/components/ui/CopyButton";
-
-// Static company news — replace with a DB query when a news system exists
-const COMPANY_NEWS = [
-  {
-    id: "1",
-    title: "BPLAY Token Launch on Polygon Mainnet",
-    date: "2026-04-20",
-    summary: "We are thrilled to announce the official launch of BPLAY tokens on the Polygon mainnet. Early holders receive bonus rewards.",
-  },
-  {
-    id: "2",
-    title: "New Partnership with GameFi Alliance",
-    date: "2026-04-15",
-    summary: "Bplay has joined the GameFi Alliance, opening doors to cross-platform token utility across 50+ partner games.",
-  },
-  {
-    id: "3",
-    title: "Q2 2026 Roadmap Released",
-    date: "2026-04-10",
-    summary: "Our Q2 roadmap includes staking rewards, a mobile wallet, and expanded BPLAY utility across the Bplay ecosystem.",
-  },
-];
+import { TokenChart } from "@/features/purchases/components/TokenChart";
 
 export default async function OverviewPage() {
   const user = await verifySession();
   const isUser = user.role === "USER";
 
-  const [bplayBalance, rate] = await Promise.all([
+  const [bplayBalance, rate, newsItems] = await Promise.all([
     getBplayBalance(user.id),
     getCurrentExchangeRate(),
+    getRecentSystemMessages(3),
   ]);
 
   const currentRate = parseFloat(rate?.rate ?? "0");
@@ -47,6 +39,8 @@ export default async function OverviewPage() {
   const firstName = user.name?.split(" ")[0] ?? "there";
 
   if (isUser) {
+    const chartData = await getTokenPurchaseHistory(user.id);
+
     return (
       <div className="flex flex-col gap-5">
         {/* Welcome Banner */}
@@ -100,6 +94,15 @@ export default async function OverviewPage() {
           </div>
         </div>
 
+        {/* Token Growth Chart */}
+        <div className="rounded-2xl p-6" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold text-white">BPLAY Growth</h2>
+          </div>
+          <TokenChart data={chartData} />
+        </div>
+
         {/* Company News */}
         <div className="rounded-2xl p-6" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-center gap-2 mb-4">
@@ -107,17 +110,33 @@ export default async function OverviewPage() {
             <h2 className="text-sm font-semibold text-white">Company News</h2>
           </div>
           <div className="flex flex-col divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-            {COMPANY_NEWS.map((item) => (
-              <div key={item.id} className="py-4 first:pt-0 last:pb-0">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-white">{item.title}</p>
-                    <p className="text-xs text-white/40 mt-1">{item.summary}</p>
+            {newsItems.length === 0 ? (
+              <p className="text-sm text-white/30 py-4">No announcements yet.</p>
+            ) : (
+              newsItems.map((item) => (
+                <div key={item.id} className="py-4 first:pt-0 last:pb-0">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-white">{item.title}</p>
+                      <p className="text-xs text-white/40 mt-1">
+                        {item.body.slice(0, 120)}{item.body.length > 120 ? "…" : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-xs text-white/30">
+                        {new Date(item.createdAt).toISOString().split("T")[0]}
+                      </span>
+                      <Link
+                        href={`/dashboard/news/${item.id}`}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Read more
+                      </Link>
+                    </div>
                   </div>
-                  <span className="text-xs text-white/30 shrink-0">{item.date}</span>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -125,11 +144,12 @@ export default async function OverviewPage() {
   }
 
   // ADMIN / SUPER_ADMIN view
-  const [stats, referralCount, tier, recentTxns] = await Promise.all([
+  const [stats, referralCount, tier, recentTxns, teamSales] = await Promise.all([
     getDashboardStats(user.id),
     countReferrals(user.id),
     getPartnerTierByName(user.tierName),
     getTransactionsByUser(user.id),
+    getTeamTokensSold(user.id),
   ]);
 
   const recent = recentTxns.slice(-5).reverse();
@@ -183,7 +203,7 @@ export default async function OverviewPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-start justify-between">
             <p className="text-xs text-white/40 font-medium tracking-wide">BPLAY Balance</p>
@@ -238,6 +258,32 @@ export default async function OverviewPage() {
             <p className="text-xs text-white/40 mt-1">{stats.totalSales} sales / {referralCount} refs</p>
           </div>
         </div>
+
+        <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-start justify-between">
+            <p className="text-xs text-white/40 font-medium tracking-wide">Team Tokens Sold</p>
+            <div className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: "rgba(124,92,255,0.2)" }}>
+              <Zap className="h-4 w-4 text-purple-400" />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">{teamSales.totalBplay.toLocaleString()}</p>
+            <p className="text-xs text-white/40 mt-1">BPLAY transferred</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-start justify-between">
+            <p className="text-xs text-white/40 font-medium tracking-wide">Total USDC Volume</p>
+            <div className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: "rgba(34,197,94,0.2)" }}>
+              <DollarSign className="h-4 w-4 text-green-400" />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">{formatUsd(teamSales.totalUsdc)}</p>
+            <p className="text-xs text-white/40 mt-1">From team purchases</p>
+          </div>
+        </div>
       </div>
 
       {/* Affiliate Link */}
@@ -270,6 +316,43 @@ export default async function OverviewPage() {
               <p className="text-xs text-white/40 mt-1">{label}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Company News */}
+      <div className="rounded-2xl p-6" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Newspaper className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold text-white">Company News</h2>
+        </div>
+        <div className="flex flex-col divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+          {newsItems.length === 0 ? (
+            <p className="text-sm text-white/30 py-4">No announcements yet.</p>
+          ) : (
+            newsItems.map((item) => (
+              <div key={item.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-white">{item.title}</p>
+                    <p className="text-xs text-white/40 mt-1">
+                      {item.body.slice(0, 120)}{item.body.length > 120 ? "…" : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="text-xs text-white/30">
+                      {new Date(item.createdAt).toISOString().split("T")[0]}
+                    </span>
+                    <Link
+                      href={`/dashboard/news/${item.id}`}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Read more
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

@@ -20,8 +20,8 @@ export async function requestPayoutAction(
   const method = formData.get("payoutMethod") as "USDC" | "BANK_TRANSFER";
   const walletAddress = formData.get("walletAddress") as string | null;
 
-  if (isNaN(amount) || amount < 50) {
-    return { error: "Minimum payout amount is $50." };
+  if (isNaN(amount) || amount <= 0) {
+    return { error: "Amount must be greater than $0." };
   }
 
   const balance = await getAvailableBalance(user.id);
@@ -49,9 +49,9 @@ export async function requestPayoutAction(
   return { success: true };
 }
 
-export async function approvePayoutAction(payoutId: string): Promise<void> {
+export async function approvePayoutAction(payoutId: string, txHash?: string): Promise<void> {
   const user = await verifyRole(["SUPER_ADMIN"]);
-  await approvePayoutRequest(payoutId, user.id);
+  await approvePayoutRequest(payoutId, user.id, txHash);
   revalidatePath("/dashboard/payouts");
 }
 

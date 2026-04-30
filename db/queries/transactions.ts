@@ -3,6 +3,7 @@ import { db } from "../client";
 import { transactions, type Transaction, type NewTransaction } from "../schema/transactions";
 import { affiliations } from "../schema/affiliations";
 import { users } from "../schema/users";
+import { payoutRequests } from "../schema/payout-requests";
 
 export type TransactionFilters = {
   from?: Date;
@@ -121,7 +122,7 @@ export const getDashboardStats = async (
 };
 
 export const getAvailableBalance = async (userId: string): Promise<number> => {
-  const [earned, paid] = await Promise.all([
+  const [earned, paid, onHold] = await Promise.all([
     db
       .select({ total: sum(transactions.amount) })
       .from(transactions)
@@ -142,9 +143,19 @@ export const getAvailableBalance = async (userId: string): Promise<number> => {
           eq(transactions.status, "confirmed")
         )
       ),
+    db
+      .select({ total: sum(payoutRequests.amount) })
+      .from(payoutRequests)
+      .where(
+        and(
+          eq(payoutRequests.userId, userId),
+          eq(payoutRequests.status, "pending")
+        )
+      ),
   ]);
 
   const totalEarned = parseFloat(earned[0]?.total ?? "0");
   const totalPaid = parseFloat(paid[0]?.total ?? "0");
-  return Math.max(0, totalEarned - totalPaid);
+  const totalOnHold = parseFloat(onHold[0]?.total ?? "0");
+  return Math.max(0, totalEarned - totalPaid - totalOnHold);
 };

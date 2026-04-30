@@ -119,3 +119,41 @@ export const sendPasswordResetEmail = async (
 
   if (error) throw new Error(`Failed to send password reset email: ${error.message}`);
 };
+
+export const sendBroadcastEmail = async (
+  to: string,
+  name: string,
+  messageTitle: string,
+  messageId: string,
+  appUrl: string
+): Promise<void> => {
+  const readUrl = `${appUrl}/dashboard/news/${messageId}`;
+  const { error } = await resend.emails.send({
+    from: process.env.MAIL_FROM!,
+    to,
+    subject: `[BPLAY] ${messageTitle}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        ${logoHtml}
+        <h1 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111827">
+          ${messageTitle}
+        </h1>
+        <p style="color:#6b7280;margin-bottom:28px;line-height:1.6">
+          Hi ${name}, a new announcement has been posted on the BPLAY Partner Portal.
+          Click below to read the full message.
+        </p>
+        <a href="${readUrl}"
+           style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-weight:600;
+                  padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px">
+          Read Announcement
+        </a>
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb">
+          <p style="color:#9ca3af;font-size:12px;margin:0">
+            You received this because you are a BPLAY Partner Portal member.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+  if (error) throw new Error(`Failed to send broadcast email: ${error.message}`);
+};

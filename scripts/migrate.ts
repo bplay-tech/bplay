@@ -19,8 +19,12 @@ async function runFile(filePath: string) {
       console.log(`  [${i + 1}/${statements.length}] OK`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("already exists")) {
-        console.log(`  [${i + 1}/${statements.length}] SKIP (already exists)`);
+      if (
+        msg.includes("already exists") ||
+        msg.includes("is not an existing enum label") ||
+        msg.includes("does not exist")
+      ) {
+        console.log(`  [${i + 1}/${statements.length}] SKIP (already applied)`);
       } else {
         console.error(`  [${i + 1}/${statements.length}] ERROR:`, msg);
         process.exit(1);
