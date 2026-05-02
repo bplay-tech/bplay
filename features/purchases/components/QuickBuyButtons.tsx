@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useSendTransaction } from "wagmi";
-import { parseUnits, encodeFunctionData } from "viem";
+import { useAccount, useWriteContract } from "wagmi";
+import { parseUnits } from "viem";
 import { Button } from "@/components/ui/Button";
 import { BuyConfirmModal } from "./BuyConfirmModal";
 import { TransactionPendingModal } from "./TransactionPendingModal";
@@ -28,7 +28,7 @@ interface QuickBuyButtonsProps {
 export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, transferAddress }: QuickBuyButtonsProps) {
   const recipient = (transferAddress ?? treasuryAddress) as `0x${string}`;
   const { address } = useAccount();
-  const { sendTransactionAsync } = useSendTransaction();
+  const { writeContractAsync } = useWriteContract();
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
@@ -40,17 +40,13 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, tr
     try {
       const { purchaseId } = await createBplayPurchaseAction(usdcAmount, address, recipient);
 
-      const data = encodeFunctionData({
+      setSelectedAmount(null);
+      setPending(true);
+      const hash = await writeContractAsync({
+        address: usdcContractAddress as `0x${string}`,
         abi: ERC20_TRANSFER_ABI,
         functionName: "transfer",
         args: [recipient, parseUnits(String(usdcAmount), 6)],
-      });
-
-      setSelectedAmount(null);
-      setPending(true);
-      const hash = await sendTransactionAsync({
-        to: usdcContractAddress as `0x${string}`,
-        data,
       });
 
       setTxHash(hash);

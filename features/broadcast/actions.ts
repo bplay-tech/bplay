@@ -1,10 +1,11 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { verifyRole } from "@/lib/dal";
 import { createSystemMessage } from "@/db/queries/system-messages";
-import { getAllUsers } from "@/db/queries/users";
+import { getActiveUserRecipients } from "@/db/queries/users";
 import { sendBroadcastEmail } from "@/lib/email";
 
 const broadcastSchema = z.object({
@@ -12,7 +13,10 @@ const broadcastSchema = z.object({
   body: z.string().min(1, "Body is required.").max(5000, "Body is too long."),
 });
 
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 5;
+const BATCH_DELAY_MS = 1100;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function sendBroadcastMessageAction(
   _prev: { error: string } | { success: true } | null,
@@ -33,15 +37,18 @@ export async function sendBroadcastMessageAction(
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const allUsers = await getAllUsers();
-  const recipients = allUsers.filter((u) => u.isActive && u.id !== actor.id);
+  const allUsers = await getActiveUserRecipients();
+  const recipients = allUsers.filter((u) => u.id !== actor.id);
 
-  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-    const batch = recipients.slice(i, i + BATCH_SIZE);
-    await Promise.allSettled(
-      batch.map((u) => sendBroadcastEmail(u.email, u.name, parsed.data.title, message.id, appUrl))
-    );
-  }
+  after(async () => {
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      if (i > 0) await sleep(BATCH_DELAY_MS);
+      const batch = recipients.slice(i, i + BATCH_SIZE);
+      await Promise.allSettled(
+        batch.map((u) => sendBroadcastEmail(u.email, u.name, parsed.data.title, message.id, appUrl))
+      );
+    }
+  });
 
   revalidatePath("/dashboard/overview");
   revalidatePath("/dashboard/compose");

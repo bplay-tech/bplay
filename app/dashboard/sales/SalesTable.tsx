@@ -42,7 +42,7 @@ const COLUMNS: Column<Transaction>[] = [
     header: "Date",
     key: "date",
     render: (row) => (
-      <span className="text-muted">{new Date(row.createdAt).toLocaleDateString()}</span>
+      <span className="text-muted">{new Date(row.createdAt).toLocaleDateString("en-US")}</span>
     ),
   },
   { header: "Status", key: "status", render: (row) => <StatusBadge status={row.status} /> },

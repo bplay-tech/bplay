@@ -1,11 +1,59 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
 import { ExternalLink } from "lucide-react";
-import { Table, type Column } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/Badge";
+import { Table, type Column } from "@/components/ui/Table";
 import { approvePurchaseAction, rejectPurchaseAction } from "@/features/purchases/actions";
 import type { BplayPurchaseWithUser } from "@/db/queries/bplay-purchases";
+
+function ActionButtons({ purchase }: { purchase: BplayPurchaseWithUser }) {
+  const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
+  const canApprove = purchase.status === "payment_confirmed";
+
+  const handle = async (type: "approve" | "reject") => {
+    setLoading(type);
+    try {
+      if (type === "approve") {
+        await approvePurchaseAction(purchase.id);
+        toast.success(`Purchase approved — ${parseFloat(purchase.bplayAmount).toLocaleString()} BPLAY sent`);
+      } else {
+        await rejectPurchaseAction(purchase.id);
+        toast.success("Purchase rejected.");
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  return (
+    <div className="flex gap-2">
+      <Button
+        size="sm"
+        variant="success"
+        loading={loading === "approve"}
+        disabled={loading !== null || !canApprove}
+        onClick={() => handle("approve")}
+        title={!canApprove ? "Payment not yet confirmed" : undefined}
+      >
+        Approve
+      </Button>
+      <Button
+        size="sm"
+        variant="danger"
+        loading={loading === "reject"}
+        disabled={loading !== null}
+        onClick={() => handle("reject")}
+      >
+        Reject
+      </Button>
+    </div>
+  );
+}
 
 const COLUMNS: Column<BplayPurchaseWithUser>[] = [
   { header: "Buyer", key: "buyer", render: (r) => <span className="text-sm font-medium">{r.userName}</span> },
@@ -30,17 +78,14 @@ const COLUMNS: Column<BplayPurchaseWithUser>[] = [
         <span className="text-muted">—</span>
       ),
   },
-  { header: "Date", key: "date", render: (r) => <span className="text-muted text-xs">{new Date(r.createdAt).toLocaleDateString()}</span> },
+  { header: "Date", key: "date", render: (r) => <span className="text-muted text-xs">{new Date(r.createdAt).toLocaleDateString("en-US")}</span> },
   { header: "Status", key: "status", render: (r) => <StatusBadge status={r.status} /> },
   {
     header: "Actions",
     key: "actions",
     render: (r) =>
       r.status === "pending_payment" || r.status === "payment_confirmed" ? (
-        <div className="flex gap-2">
-          <Button size="sm" variant="success" onClick={() => approvePurchaseAction(r.id)}>Approve</Button>
-          <Button size="sm" variant="danger" onClick={() => rejectPurchaseAction(r.id)}>Reject</Button>
-        </div>
+        <ActionButtons purchase={r} />
       ) : null,
   },
 ];

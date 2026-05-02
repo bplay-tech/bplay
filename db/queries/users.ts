@@ -100,6 +100,13 @@ export const getAllUsers = async (): Promise<UserWithTier[]> => {
   return result.map((row) => ({ ...row, tier: row.tier }));
 };
 
+export const getActiveUserRecipients = async (): Promise<{ id: string; email: string; name: string }[]> => {
+  return db
+    .select({ id: users.id, email: users.email, name: users.name })
+    .from(users)
+    .where(eq(users.isActive, true));
+};
+
 export const getUsersByAffiliator = async (affiliateId: string): Promise<UserWithTier[]> => {
   const result = await db
     .select(userWithTierSelect)

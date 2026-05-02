@@ -22,7 +22,7 @@ interface PayoutsClientProps {
 const HISTORY_COLUMNS: Column<PayoutRequest>[] = [
   { header: "Amount", key: "amount", render: (r) => <span className="font-medium">{formatUsd(r.amount)}</span> },
   { header: "Method", key: "method", render: (r) => <span className="text-muted">{r.payoutMethod}</span> },
-  { header: "Date", key: "date", render: (r) => <span className="text-muted">{new Date(r.createdAt).toLocaleDateString()}</span> },
+  { header: "Date", key: "date", render: (r) => <span className="text-muted">{new Date(r.createdAt).toLocaleDateString("en-US")}</span> },
   { header: "Status", key: "status", render: (r) => <StatusBadge status={r.status} /> },
 ];
 

@@ -126,9 +126,9 @@ export const sendBroadcastEmail = async (
   messageTitle: string,
   messageId: string,
   appUrl: string
-): Promise<void> => {
+): Promise<string> => {
   const readUrl = `${appUrl}/dashboard/news/${messageId}`;
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: process.env.MAIL_FROM!,
     to,
     subject: `[BPLAY] ${messageTitle}`,
@@ -155,5 +155,6 @@ export const sendBroadcastEmail = async (
       </div>
     `,
   });
-  if (error) throw new Error(`Failed to send broadcast email: ${error.message}`);
+  if (error) throw new Error(error.message);
+  return data!.id;
 };

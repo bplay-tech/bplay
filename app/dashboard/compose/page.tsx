@@ -4,7 +4,7 @@ import { ComposeClient } from "./ComposeClient";
 export default async function ComposePage() {
   await verifyRole(["SUPER_ADMIN"]);
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Compose Announcement</h1>
         <p className="text-muted mt-1 text-sm">

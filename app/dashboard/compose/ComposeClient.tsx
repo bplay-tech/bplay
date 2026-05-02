@@ -37,7 +37,7 @@ export function ComposeClient() {
           <p className="text-sm text-danger">{state.error}</p>
         )}
         {state && "success" in state && (
-          <p className="text-sm text-success">Announcement sent to all users.</p>
+          <p className="text-sm text-success">Announcement saved. Emails are being sent.</p>
         )}
 
         <Button type="submit" loading={pending} className="self-start">

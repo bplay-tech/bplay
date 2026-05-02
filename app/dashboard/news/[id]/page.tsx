@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import { getSystemMessageById, markMessageAsRead } from "@/db/queries/system-messages";
+import { RefreshOnMount } from "@/components/RefreshOnMount";
 
 export default async function NewsDetailPage({
   params,
@@ -17,7 +18,8 @@ export default async function NewsDetailPage({
   await markMessageAsRead(message.id, user.id);
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl">
+    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+      <RefreshOnMount />
       <Link
         href="/dashboard/news"
         className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors w-fit"

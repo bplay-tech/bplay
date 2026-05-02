@@ -1,33 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useEffect, useRef } from "react";
+import { useAccount, useDisconnect } from "wagmi";
+import { useAppKit } from "@reown/appkit/react";
 import { Button } from "@/components/ui/Button";
 import { formatAddress } from "@/lib/utils";
-import { wagmiConfig } from "@/lib/wagmi";
 import { saveWalletAddressAction } from "@/features/wallet/actions";
-
-const connector = wagmiConfig.connectors[0];
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount();
-  const { connect, isPending } = useConnect();
   const { disconnect } = useDisconnect();
-  const [error, setError] = useState<string | null>(null);
+  const { open } = useAppKit();
+  const savedRef = useRef<string | null>(null);
 
-  const handleConnect = () => {
-    setError(null);
-    connect(
-      { connector },
-      {
-        onSuccess: (data) => {
-          const addr = data.accounts[0];
-          if (addr) saveWalletAddressAction(addr).catch(() => null);
-        },
-        onError: (e) => setError(e.message),
-      }
-    );
-  };
+  useEffect(() => {
+    if (address && address !== savedRef.current) {
+      savedRef.current = address;
+      saveWalletAddressAction(address).catch(() => null);
+    }
+    if (!address) {
+      savedRef.current = null;
+    }
+  }, [address]);
 
   if (isConnected && address) {
     return (
@@ -38,11 +32,8 @@ export function ConnectButton() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <Button size="sm" loading={isPending} onClick={handleConnect}>
-        Connect Wallet
-      </Button>
-      {error && <p className="text-xs text-red-400 text-center max-w-xs">{error}</p>}
-    </div>
+    <Button size="sm" onClick={() => open()}>
+      Connect Wallet
+    </Button>
   );
 }
