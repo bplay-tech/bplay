@@ -10,8 +10,10 @@ import { transactions } from "../schema/transactions";
 import { payoutRequests } from "../schema/payout-requests";
 import { bplayPurchases } from "../schema/bplay-purchases";
 import { exchangeRates } from "../schema/exchange-rates";
+import { messageReads } from "../schema/message-reads";
 
 export type UserWithTier = User & { tier: PartnerTier };
+export type UserWithTierAndWallet = UserWithTier & { walletAddress: string | null };
 
 const userWithTierSelect = {
   id: users.id,
@@ -26,6 +28,11 @@ const userWithTierSelect = {
   createdAt: users.createdAt,
   updatedAt: users.updatedAt,
   tier: partnerTiers,
+};
+
+const userWithTierAndWalletSelect = {
+  ...userWithTierSelect,
+  walletAddress: userSettings.walletAddress,
 };
 
 export const getUserById = async (id: string): Promise<User | null> => {
@@ -65,6 +72,7 @@ export const deleteUser = async (id: string): Promise<void> => {
   await db.update(payoutRequests).set({ reviewedBy: null }).where(eq(payoutRequests.reviewedBy, id));
 
   // Delete all records owned by this user
+  await db.delete(messageReads).where(eq(messageReads.userId, id));
   await db.delete(userSettings).where(eq(userSettings.userId, id));
   await db.delete(userNotifications).where(eq(userNotifications.userId, id));
   await db.delete(invitationTokens).where(eq(invitationTokens.userId, id));
@@ -92,6 +100,13 @@ export const getAllUsers = async (): Promise<UserWithTier[]> => {
   return result.map((row) => ({ ...row, tier: row.tier }));
 };
 
+export const getActiveUserRecipients = async (): Promise<{ id: string; email: string; name: string }[]> => {
+  return db
+    .select({ id: users.id, email: users.email, name: users.name })
+    .from(users)
+    .where(eq(users.isActive, true));
+};
+
 export const getUsersByAffiliator = async (affiliateId: string): Promise<UserWithTier[]> => {
   const result = await db
     .select(userWithTierSelect)
@@ -101,4 +116,26 @@ export const getUsersByAffiliator = async (affiliateId: string): Promise<UserWit
     .where(eq(affiliations.affiliateId, affiliateId));
 
   return result.map((row) => ({ ...row, tier: row.tier }));
+};
+
+export const getAllUsersWithWallet = async (): Promise<UserWithTierAndWallet[]> => {
+  const result = await db
+    .select(userWithTierAndWalletSelect)
+    .from(users)
+    .innerJoin(partnerTiers, eq(users.partnerTierId, partnerTiers.id))
+    .leftJoin(userSettings, eq(userSettings.userId, users.id));
+
+  return result.map((row) => ({ ...row, tier: row.tier, walletAddress: row.walletAddress ?? null }));
+};
+
+export const getUsersByAffiliatorWithWallet = async (affiliateId: string): Promise<UserWithTierAndWallet[]> => {
+  const result = await db
+    .select(userWithTierAndWalletSelect)
+    .from(users)
+    .innerJoin(affiliations, eq(affiliations.referredUserId, users.id))
+    .innerJoin(partnerTiers, eq(users.partnerTierId, partnerTiers.id))
+    .leftJoin(userSettings, eq(userSettings.userId, users.id))
+    .where(eq(affiliations.affiliateId, affiliateId));
+
+  return result.map((row) => ({ ...row, tier: row.tier, walletAddress: row.walletAddress ?? null }));
 };

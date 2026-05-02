@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./client";
 import { partnerTiers } from "./schema/partner-tiers";
 import { exchangeRates } from "./schema/exchange-rates";
@@ -12,17 +12,22 @@ const SUPER_ADMIN_PASSWORD = "Bplay#SA2026!xK9m";
 
 async function seedPartnerTiers() {
   console.log("Seeding partner tiers...");
-  const existing = await db.select().from(partnerTiers).limit(1);
-  if (existing.length > 0) {
-    console.log("  Partner tiers already seeded — skipping");
-    return;
-  }
-  await db.insert(partnerTiers).values([
-    { name: "Bronze", commissionRate: "5.00", minSalesThreshold: 0, color: "#CD7F32" },
-    { name: "Silver", commissionRate: "8.00", minSalesThreshold: 10, color: "#9CA3AF" },
-    { name: "Gold", commissionRate: "12.00", minSalesThreshold: 25, color: "#F59E0B" },
-  ]);
-  console.log("  3 partner tiers created");
+  await db
+    .insert(partnerTiers)
+    .values([
+      { name: "Bronze", commissionRate: "9.00", minSalesThreshold: 0, color: "#CD7F32" },
+      { name: "Silver", commissionRate: "11.00", minSalesThreshold: 10, color: "#9CA3AF" },
+      { name: "Gold", commissionRate: "13.50", minSalesThreshold: 25, color: "#F59E0B" },
+      { name: "Platinum", commissionRate: "17.00", minSalesThreshold: 50, color: "#67E8F9" },
+    ])
+    .onConflictDoUpdate({
+      target: partnerTiers.name,
+      set: {
+        commissionRate: sql`excluded.commission_rate`,
+        color: sql`excluded.color`,
+      },
+    });
+  console.log("  4 partner tiers upserted");
 }
 
 async function seedExchangeRate() {

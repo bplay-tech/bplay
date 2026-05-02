@@ -1,13 +1,18 @@
-import { createConfig, http } from "wagmi";
-import { mainnet, sepolia } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import { mainnet, sepolia, type AppKitNetwork } from "@reown/appkit/networks";
 
-export const wagmiConfig = createConfig({
-  chains: [mainnet, sepolia],
-  connectors: [injected({ target: "metaMask" })],
+export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+
+if (!projectId) {
+  throw new Error("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set");
+}
+
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [mainnet, sepolia];
+
+export const wagmiAdapter = new WagmiAdapter({
+  projectId,
+  networks,
   ssr: true,
-  transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
-  },
 });
+
+export const wagmiConfig = wagmiAdapter.wagmiConfig;

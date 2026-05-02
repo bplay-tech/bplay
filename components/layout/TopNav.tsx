@@ -12,7 +12,7 @@ import {
   Package,
   RefreshCw,
   Coins,
-  Bell,
+  Send,
   ChevronDown,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -36,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Team", href: "/dashboard/team", icon: <Users className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
   { label: "Purchases", href: "/dashboard/purchases", icon: <Package className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
   { label: "Exchange Rate", href: "/dashboard/exchange-rate", icon: <RefreshCw className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
+  { label: "Compose", href: "/dashboard/compose", icon: <Send className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
   { label: "Settings", href: "/dashboard/settings", icon: <Settings className="h-4 w-4" /> },
 ];
 
@@ -43,13 +44,14 @@ interface TopNavProps {
   name: string;
   role: string;
   tierName: string;
+  notificationBell?: React.ReactNode;
 }
 
 function getInitials(name: string) {
   return name.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase();
 }
 
-export function TopNav({ name, role, tierName }: TopNavProps) {
+export function TopNav({ name, role, tierName, notificationBell }: TopNavProps) {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const tierDisplay = TIER_DISPLAY[tierName as TierName];
@@ -77,9 +79,7 @@ export function TopNav({ name, role, tierName }: TopNavProps) {
 
         {/* Right: bell + user */}
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-          <button className="p-2 rounded-lg text-white/50 hover:text-white transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
+          {notificationBell}
           <DropdownMenu
             trigger={
               <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">

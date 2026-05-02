@@ -21,6 +21,7 @@ export const getAllPayoutRequests = async (): Promise<PayoutRequestWithUser[]> =
       status: payoutRequests.status,
       reviewedBy: payoutRequests.reviewedBy,
       reviewedAt: payoutRequests.reviewedAt,
+      txHash: payoutRequests.txHash,
       notes: payoutRequests.notes,
       createdAt: payoutRequests.createdAt,
       userName: users.name,
@@ -43,11 +44,15 @@ export const createPayoutRequest = async (data: NewPayoutRequest): Promise<Payou
   return result[0];
 };
 
-export const approvePayoutRequest = async (id: string, reviewerId: string): Promise<void> => {
+export const approvePayoutRequest = async (
+  id: string,
+  reviewerId: string,
+  txHash?: string
+): Promise<void> => {
   await db.transaction(async (tx) => {
     const [request] = await tx
       .update(payoutRequests)
-      .set({ status: "approved", reviewedBy: reviewerId, reviewedAt: new Date() })
+      .set({ status: "approved", reviewedBy: reviewerId, reviewedAt: new Date(), txHash: txHash ?? null })
       .where(eq(payoutRequests.id, id))
       .returning();
 
@@ -56,6 +61,7 @@ export const approvePayoutRequest = async (id: string, reviewerId: string): Prom
       type: "PAYOUT",
       amount: request.amount,
       status: "confirmed",
+      txHash: txHash ?? null,
       notes: `Payout approved by ${reviewerId}`,
     });
   });

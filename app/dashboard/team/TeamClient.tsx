@@ -6,20 +6,23 @@ import { MoreHorizontal, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Select";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { Table, type Column } from "@/components/ui/Table";
 import { CreateMemberModal } from "./CreateMemberModal";
 import { TransferAddressModal } from "./TransferAddressModal";
-import { deleteUserAction, updateUserRoleAction } from "@/features/team/actions";
+import { deleteUserAction, updateUserRoleAction, updateUserTierAction } from "@/features/team/actions";
 import { formatAddress } from "@/lib/utils";
-import type { UserWithTier } from "@/db/queries/users";
+import type { UserWithTierAndWallet } from "@/db/queries/users";
+import type { PartnerTier } from "@/db/schema/partner-tiers";
 
 interface TeamClientProps {
-  members: UserWithTier[];
-  role: "USER" | "ADMIN" | "SUPER_ADMIN";
+  members: UserWithTierAndWallet[];
+  tiers: PartnerTier[];
+  role: "ADMIN" | "SUPER_ADMIN";
 }
 
-export function TeamClient({ members, role }: TeamClientProps) {
+export function TeamClient({ members, tiers, role }: TeamClientProps) {
   const isSuperAdmin = role === "SUPER_ADMIN";
   const canManageMembers = role === "ADMIN" || role === "SUPER_ADMIN";
   const [modalOpen, setModalOpen] = useState(false);
@@ -28,7 +31,9 @@ export function TeamClient({ members, role }: TeamClientProps) {
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const columns: Column<UserWithTier>[] = [
+  const tierOptions = tiers.map((t) => ({ value: t.name, label: t.name }));
+
+  const columns: Column<UserWithTierAndWallet>[] = [
     {
       header: "Member",
       key: "member",
@@ -51,19 +56,42 @@ export function TeamClient({ members, role }: TeamClientProps) {
     {
       header: "Tier",
       key: "tier",
-      render: (r) => <span className="text-sm text-muted">{r.tier.name}</span>,
+      render: (r) =>
+        isSuperAdmin && r.role !== "SUPER_ADMIN" ? (
+          <Select
+            value={r.tier.name}
+            onValueChange={(tierName) => {
+              startTransition(async () => {
+                await updateUserTierAction(r.id, tierName);
+                toast.success(`Tier updated to ${tierName}`);
+              });
+            }}
+            options={tierOptions}
+          />
+        ) : (
+          <span className="text-sm text-muted">{r.tier.name}</span>
+        ),
     },
     {
       header: "Status",
       key: "status",
       render: (r) => <StatusBadge status={r.isActive ? "confirmed" : "failed"} />,
     },
+    {
+      header: "Wallet",
+      key: "wallet",
+      render: (r) => (
+        <span className="text-xs font-mono text-muted">
+          {r.walletAddress ? formatAddress(r.walletAddress) : "—"}
+        </span>
+      ),
+    },
     ...(isSuperAdmin
       ? [
           {
             header: "Transfer Address",
             key: "transferAddress",
-            render: (r: UserWithTier) => (
+            render: (r: UserWithTierAndWallet) => (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-muted">
                   {r.transferAddress ? formatAddress(r.transferAddress) : "—"}
@@ -81,7 +109,7 @@ export function TeamClient({ members, role }: TeamClientProps) {
           {
             header: "Actions",
             key: "actions",
-            render: (r: UserWithTier) => (
+            render: (r: UserWithTierAndWallet) => (
               <DropdownMenu
                 trigger={
                   <button className="p-1.5 rounded-md hover:bg-card-border/30 text-muted">

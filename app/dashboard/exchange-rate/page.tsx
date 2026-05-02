@@ -8,7 +8,7 @@ export default async function ExchangeRatePage() {
   const current = await getCurrentExchangeRate();
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Exchange Rate</h1>
         <p className="text-muted mt-1">Manage the USDC → BPLAY conversion rate</p>

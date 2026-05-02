@@ -8,6 +8,7 @@ import { NotificationsForm } from "@/features/settings/components/NotificationsF
 
 export default async function SettingsPage() {
   const session = await verifySession();
+  const isUser = session.role === "USER";
   const [user, settings, notifications] = await Promise.all([
     getUserById(session.id),
     getSettingsByUser(session.id),
@@ -15,13 +16,13 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6 w-full sm:max-w-2xl">
+    <div className="flex flex-col gap-6 w-full sm:max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted mt-1">Manage your profile, payouts, and notifications</p>
+        <p className="text-muted mt-1">Manage your profile and notifications</p>
       </div>
       <ProfileForm name={user?.name ?? session.name ?? ""} email={user?.email ?? session.email ?? ""} />
-      <PayoutSettingsForm settings={settings} />
+      {!isUser && <PayoutSettingsForm settings={settings} />}
       <NotificationsForm notifications={notifications} />
     </div>
   );

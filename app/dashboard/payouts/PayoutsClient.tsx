@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { RequestPayoutModal } from "./RequestPayoutModal";
+import { ApprovePayoutModal } from "./ApprovePayoutModal";
 import { Button } from "@/components/ui/Button";
 import { Table, type Column } from "@/components/ui/Table";
 import { StatusBadge } from "@/components/ui/Badge";
-import { approvePayoutAction, rejectPayoutAction } from "@/features/payouts/actions";
+import { rejectPayoutAction } from "@/features/payouts/actions";
 import { formatUsd } from "@/lib/exchange";
 import type { PayoutRequest } from "@/db/schema/payout-requests";
 import type { PayoutRequestWithUser } from "@/db/queries/payout-requests";
 
 interface PayoutsClientProps {
   availableBalance: number;
+  onHold: number;
   history: PayoutRequest[];
   pendingAll?: PayoutRequestWithUser[];
   isSuperAdmin: boolean;
@@ -20,30 +22,13 @@ interface PayoutsClientProps {
 const HISTORY_COLUMNS: Column<PayoutRequest>[] = [
   { header: "Amount", key: "amount", render: (r) => <span className="font-medium">{formatUsd(r.amount)}</span> },
   { header: "Method", key: "method", render: (r) => <span className="text-muted">{r.payoutMethod}</span> },
-  { header: "Date", key: "date", render: (r) => <span className="text-muted">{new Date(r.createdAt).toLocaleDateString()}</span> },
+  { header: "Date", key: "date", render: (r) => <span className="text-muted">{new Date(r.createdAt).toLocaleDateString("en-US")}</span> },
   { header: "Status", key: "status", render: (r) => <StatusBadge status={r.status} /> },
 ];
 
-function AdminRow({ req, onApprove, onReject }: { req: PayoutRequestWithUser; onApprove: () => void; onReject: () => void }) {
-  return (
-    <tr className="bg-card hover:bg-card/70 transition-colors border-b border-card-border">
-      <td className="px-4 py-3 text-foreground">{req.userName}</td>
-      <td className="px-4 py-3 font-medium text-foreground">{formatUsd(req.amount)}</td>
-      <td className="px-4 py-3 text-muted">{req.payoutMethod}</td>
-      <td className="px-4 py-3 font-mono text-xs text-muted">{req.walletAddress ? req.walletAddress.slice(0, 16) + "…" : "—"}</td>
-      <td className="px-4 py-3"><StatusBadge status={req.status} /></td>
-      <td className="px-4 py-3">
-        <div className="flex gap-2">
-          <Button size="sm" variant="success" onClick={onApprove}>Approve</Button>
-          <Button size="sm" variant="danger" onClick={onReject}>Reject</Button>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-export function PayoutsClient({ availableBalance, history, pendingAll, isSuperAdmin }: PayoutsClientProps) {
+export function PayoutsClient({ availableBalance, onHold, history, pendingAll, isSuperAdmin }: PayoutsClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [approving, setApproving] = useState<PayoutRequestWithUser | null>(null);
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,13 +36,17 @@ export function PayoutsClient({ availableBalance, history, pendingAll, isSuperAd
         <div className="flex flex-col gap-1">
           <p className="text-sm text-muted">Available Balance</p>
           <p className="text-3xl font-bold text-foreground">{formatUsd(availableBalance)}</p>
+          {onHold > 0 && (
+            <p className="text-xs text-yellow-500">{formatUsd(onHold)} on hold — pending approval</p>
+          )}
         </div>
-        <Button onClick={() => setModalOpen(true)} disabled={availableBalance < 50} className="w-full sm:w-auto">
+        <Button onClick={() => setModalOpen(true)} disabled={availableBalance <= 0} className="w-full sm:w-auto">
           Request Payout
         </Button>
       </div>
 
       <RequestPayoutModal open={modalOpen} onOpenChange={setModalOpen} availableBalance={availableBalance} />
+      <ApprovePayoutModal request={approving} onOpenChange={(open) => { if (!open) setApproving(null); }} />
 
       {isSuperAdmin && pendingAll && pendingAll.length > 0 && (
         <div>
@@ -73,12 +62,25 @@ export function PayoutsClient({ availableBalance, history, pendingAll, isSuperAd
               </thead>
               <tbody>
                 {pendingAll.map((req) => (
-                  <AdminRow
-                    key={req.id}
-                    req={req}
-                    onApprove={() => approvePayoutAction(req.id)}
-                    onReject={() => rejectPayoutAction(req.id)}
-                  />
+                  <tr key={req.id} className="bg-card hover:bg-card/70 transition-colors border-b border-card-border">
+                    <td className="px-4 py-3 text-foreground">{req.userName}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{formatUsd(req.amount)}</td>
+                    <td className="px-4 py-3 text-muted">{req.payoutMethod}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted">
+                      {req.walletAddress ? req.walletAddress.slice(0, 16) + "…" : "—"}
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={req.status} /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="success" onClick={() => setApproving(req)}>
+                          Approve
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => rejectPayoutAction(req.id)}>
+                          Reject
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>

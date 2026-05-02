@@ -1,7 +1,8 @@
-import { eq, and, sum } from "drizzle-orm";
+import { eq, and, sum, inArray, sql, asc } from "drizzle-orm";
 import { db } from "../client";
 import { bplayPurchases, type BplayPurchase, type NewBplayPurchase } from "../schema/bplay-purchases";
 import { users } from "../schema/users";
+import { affiliations } from "../schema/affiliations";
 
 export type BplayPurchaseWithUser = BplayPurchase & { userName: string };
 
@@ -76,4 +77,49 @@ export const getBplayBalance = async (userId: string): Promise<number> => {
       and(eq(bplayPurchases.userId, userId), eq(bplayPurchases.status, "tokens_transferred"))
     );
   return parseFloat(result[0]?.total ?? "0");
+};
+
+export const getTeamTokensSold = async (
+  affiliateId: string
+): Promise<{ totalBplay: number; totalUsdc: number }> => {
+  const referred = await db
+    .select({ referredUserId: affiliations.referredUserId })
+    .from(affiliations)
+    .where(eq(affiliations.affiliateId, affiliateId));
+
+  if (referred.length === 0) return { totalBplay: 0, totalUsdc: 0 };
+
+  const ids = referred.map((r) => r.referredUserId);
+  const result = await db
+    .select({
+      totalBplay: sum(bplayPurchases.bplayAmount),
+      totalUsdc: sum(bplayPurchases.usdcAmount),
+    })
+    .from(bplayPurchases)
+    .where(and(inArray(bplayPurchases.userId, ids), eq(bplayPurchases.status, "tokens_transferred")));
+
+  return {
+    totalBplay: parseFloat(result[0]?.totalBplay ?? "0"),
+    totalUsdc: parseFloat(result[0]?.totalUsdc ?? "0"),
+  };
+};
+
+export type TokenDataPoint = { date: string; bplay: number; cumulative: number };
+
+export const getTokenPurchaseHistory = async (userId: string): Promise<TokenDataPoint[]> => {
+  const rows = await db
+    .select({
+      date: sql<string>`to_char(${bplayPurchases.createdAt}, 'YYYY-MM-DD')`,
+      bplay: bplayPurchases.bplayAmount,
+    })
+    .from(bplayPurchases)
+    .where(and(eq(bplayPurchases.userId, userId), eq(bplayPurchases.status, "tokens_transferred")))
+    .orderBy(asc(bplayPurchases.createdAt));
+
+  let cumulative = 0;
+  return rows.map((row) => {
+    const amount = parseFloat(row.bplay ?? "0");
+    cumulative += amount;
+    return { date: row.date, bplay: amount, cumulative };
+  });
 };

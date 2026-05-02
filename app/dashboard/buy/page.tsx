@@ -19,7 +19,7 @@ export default async function BuyPage() {
   const recipientAddress = transferAddress ?? treasuryAddress;
 
   return (
-    <div className="flex flex-col gap-6 w-full sm:max-w-2xl">
+    <div className="flex flex-col gap-6 w-full sm:max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Buy BPLAY</h1>
         <p className="text-muted mt-1">Purchase BPLAY tokens using USDC</p>

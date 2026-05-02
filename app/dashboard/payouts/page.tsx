@@ -1,17 +1,19 @@
-import { verifySession } from "@/lib/dal";
+import { verifyRole } from "@/lib/dal";
 import { getAvailableBalance } from "@/db/queries/transactions";
-import { getPayoutRequestsByUser, getAllPayoutRequests } from "@/db/queries/payout-requests";
+import { getPayoutRequestsByUser, getAllPayoutRequests, getPendingPayoutByUser } from "@/db/queries/payout-requests";
 import { PayoutsClient } from "./PayoutsClient";
 
 export default async function PayoutsPage() {
-  const user = await verifySession();
-  const [balance, history, pendingAll] = await Promise.all([
+  const user = await verifyRole(["ADMIN", "SUPER_ADMIN"]);
+  const [balance, history, pendingAll, myPending] = await Promise.all([
     getAvailableBalance(user.id),
     getPayoutRequestsByUser(user.id),
     user.role === "SUPER_ADMIN" ? getAllPayoutRequests() : Promise.resolve(undefined),
+    getPendingPayoutByUser(user.id),
   ]);
 
   const pending = pendingAll?.filter((r) => r.status === "pending");
+  const onHold = myPending ? parseFloat(myPending.amount) : 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -21,6 +23,7 @@ export default async function PayoutsPage() {
       </div>
       <PayoutsClient
         availableBalance={balance}
+        onHold={onHold}
         history={history}
         pendingAll={user.role === "SUPER_ADMIN" ? pending : undefined}
         isSuperAdmin={user.role === "SUPER_ADMIN"}
