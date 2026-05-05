@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, LogOut, ChevronDown } from "lucide-react";
+import { Bell, ChevronDown } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar } from "@/components/ui/Avatar";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { TIER_DISPLAY, type TierName } from "@/lib/tiers";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ export function Topbar({ name, email, role, tierName }: TopbarProps) {
         <button className="relative p-2 rounded-lg text-muted hover:text-foreground hover:bg-card-border/30 transition-colors">
           <Bell className="h-5 w-5" />
         </button>
+        <ConnectButton />
         <DropdownMenu
           trigger={
             <button className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">

@@ -18,7 +18,7 @@ createAppKit({
     url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
     icons: ["/favicon.ico"],
   },
-  allowUnsupportedChain: true,
+  allowUnsupportedChain: false,
   features: {
     analytics: true,
     email: false,

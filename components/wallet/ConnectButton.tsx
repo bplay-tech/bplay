@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
 import { Button } from "@/components/ui/Button";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { formatAddress } from "@/lib/utils";
 import { saveWalletAddressAction } from "@/features/wallet/actions";
 
@@ -25,9 +26,17 @@ export function ConnectButton() {
 
   if (isConnected && address) {
     return (
-      <Button variant="outline" size="sm" onClick={() => disconnect()}>
-        {formatAddress(address)}
-      </Button>
+      <DropdownMenu
+        trigger={
+          <Button variant="outline" size="sm">
+            {formatAddress(address)}
+          </Button>
+        }
+        items={[
+          { label: "Switch Wallet", onClick: () => open() },
+          { label: "Disconnect", onClick: () => disconnect(), variant: "danger" },
+        ]}
+      />
     );
   }
 

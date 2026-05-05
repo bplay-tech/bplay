@@ -8,10 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
+    "db:migrate": "tsx --env-file=.env.prod scripts/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx --env-file=.env.local db/seed.ts"
+    "db:seed": "tsx --env-file=.env.prod db/seed.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -23,6 +23,7 @@
     "@reown/appkit": "^1.8.19",
     "@reown/appkit-adapter-wagmi": "^1.8.19",
     "@tanstack/react-query": "^5.99.2",
+    
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

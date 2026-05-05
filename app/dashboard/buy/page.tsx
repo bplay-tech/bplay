@@ -4,6 +4,7 @@ import { getUserById } from "@/db/queries/users";
 import { Card } from "@/components/ui/Card";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { QuickBuyButtons } from "@/features/purchases/components/QuickBuyButtons";
+import { WalletActions } from "@/components/wallet/WalletActions";
 
 export default async function BuyPage() {
   const session = await verifySession();
@@ -71,6 +72,8 @@ export default async function BuyPage() {
           ))}
         </div>
       </Card>
+
+      <WalletActions />
 
       <p className="text-xs text-muted text-center">
         Exchange rate: 1 USDC = {rateNum.toFixed(2)} BPLAY
