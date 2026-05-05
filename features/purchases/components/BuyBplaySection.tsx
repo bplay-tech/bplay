@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Wallet, Zap, RefreshCcw, Info } from "lucide-react";
-import { useAccount, useSendTransaction } from "wagmi";
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
+import { mainnet } from "wagmi/chains";
 import { parseUnits, encodeFunctionData } from "viem";
 import { Card } from "@/components/ui/Card";
 import { CopyButton } from "@/components/ui/CopyButton";
@@ -31,8 +32,15 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress }:
   const { address, isConnected } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
   const [pending, setPending] = useState(false);
-  const [txHash, setTxHash] = useState<string>();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [loading, setLoading] = useState<number | null>(null);
+
+  const { isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({ hash: txHash, chainId: mainnet.id });
+
+  const handleClose = () => {
+    setPending(false);
+    setTxHash(undefined);
+  };
 
   const handleBuy = async (usdcAmount: number) => {
     if (!address) return;
@@ -46,7 +54,7 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress }:
       });
       setPending(true);
       const hash = await sendTransactionAsync({ to: usdcContractAddress as `0x${string}`, data });
-      setTxHash(hash);
+      setTxHash(hash as `0x${string}`);
       await recordTxHashAction(purchaseId, hash);
     } catch {
       setPending(false);
@@ -168,7 +176,7 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress }:
         </p>
       </div>
 
-      <TransactionPendingModal open={pending} txHash={txHash} />
+      <TransactionPendingModal open={pending} txHash={txHash} confirmed={isTxConfirmed} onClose={handleClose} />
     </div>
   );
 }
