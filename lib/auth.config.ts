@@ -22,7 +22,7 @@ export const authConfig: NextAuthConfig = {
       session.user.role = token.role as "USER" | "ADMIN" | "SUPER_ADMIN";
       session.user.tierName = token.tierName as string;
       session.user.referralCode = token.referralCode as string;
-      if (token.error) session.error = token.error;
+      if (token.error) session.error = token.error as "RefreshFailed";
       return session;
     },
   },
