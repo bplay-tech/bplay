@@ -7,7 +7,7 @@ type Role = "USER" | "ADMIN" | "SUPER_ADMIN";
 
 export const verifySession = async () => {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user || session.error === "RefreshFailed") redirect("/login");
   return session.user;
 };
 

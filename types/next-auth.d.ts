@@ -2,6 +2,7 @@ import { type DefaultSession } from "next-auth";
 
 declare module "next-auth" {
   interface Session {
+    error?: "RefreshFailed";
     user: {
       id: string;
       role: "USER" | "ADMIN" | "SUPER_ADMIN";
@@ -24,5 +25,7 @@ declare module "next-auth/jwt" {
     role: "USER" | "ADMIN" | "SUPER_ADMIN";
     tierName: string;
     referralCode: string;
+    accessTokenExpiry: number;
+    error?: "RefreshFailed";
   }
 }

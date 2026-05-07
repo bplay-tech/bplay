@@ -1,4 +1,4 @@
-import { eq, and, sum, inArray, sql, asc } from "drizzle-orm";
+import { eq, and, sum, inArray, sql, asc, or } from "drizzle-orm";
 import { db } from "../client";
 import { bplayPurchases, type BplayPurchase, type NewBplayPurchase } from "../schema/bplay-purchases";
 import { users } from "../schema/users";
@@ -29,7 +29,7 @@ export const getAllPendingPurchases = async (): Promise<BplayPurchaseWithUser[]>
     })
     .from(bplayPurchases)
     .innerJoin(users, eq(bplayPurchases.userId, users.id))
-    .where(eq(bplayPurchases.status, "pending_payment"));
+    .where(or(eq(bplayPurchases.status, "pending_payment"), eq(bplayPurchases.status, "payment_confirmed")));
 };
 
 export const createBplayPurchase = async (data: NewBplayPurchase): Promise<BplayPurchase> => {

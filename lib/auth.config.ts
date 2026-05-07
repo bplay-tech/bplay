@@ -2,7 +2,11 @@ import type { NextAuthConfig } from "next-auth";
 
 export const authConfig: NextAuthConfig = {
   pages: { signIn: "/login" },
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days — refresh token lifetime
+    updateAge: 10 * 60,         // re-issue cookie every 10 min
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -18,6 +22,7 @@ export const authConfig: NextAuthConfig = {
       session.user.role = token.role as "USER" | "ADMIN" | "SUPER_ADMIN";
       session.user.tierName = token.tierName as string;
       session.user.referralCode = token.referralCode as string;
+      if (token.error) session.error = token.error;
       return session;
     },
   },

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
+import { cookieToInitialState } from "wagmi";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
+import { wagmiAdapter } from "@/lib/wagmi";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,19 +22,22 @@ export const metadata: Metadata = {
   description: "Manage your BPLAY partner commissions, referrals, and payouts",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookie = (await headers()).get("cookie");
+  const initialState = cookieToInitialState(wagmiAdapter.wagmiConfig, cookie);
+
   return (
     <html
       lang="en"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <Providers initialState={initialState}>{children}</Providers>
         <Toaster position="bottom-right" richColors />
       </body>
     </html>
