@@ -34,9 +34,13 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, tr
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customInput, setCustomInput] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+
+  const customUsdcAmount = parseFloat(customInput);
+  const isValidCustomAmount = !isNaN(customUsdcAmount) && customUsdcAmount > 0;
 
   const { isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({ hash: txHash, chainId: mainnet.id });
 
@@ -114,6 +118,40 @@ export function QuickBuyButtons({ rate, treasuryAddress, usdcContractAddress, tr
           </Button>
         ))}
       </div>
+
+      <div className="mt-4 flex flex-col gap-2">
+        <label className="text-xs font-medium text-muted uppercase tracking-wider">Custom Amount</label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              placeholder="0.00"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              disabled={pending}
+              className="w-full pl-7 pr-14 py-2.5 rounded-lg border border-card-border bg-bg text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">USDC</span>
+          </div>
+          <Button
+            disabled={!isValidCustomAmount || pending}
+            onClick={() => setSelectedAmount(customUsdcAmount)}
+            className="shrink-0"
+          >
+            Buy
+          </Button>
+        </div>
+        {isValidCustomAmount && (
+          <p className="text-xs text-muted">
+            You will receive approximately{" "}
+            <span className="text-primary font-semibold">{formatBplay(usdcToBplay(customUsdcAmount, rate))}</span>
+          </p>
+        )}
+      </div>
+
       <BuyConfirmModal
         open={selectedAmount !== null}
         onOpenChange={(open) => { if (!open) setSelectedAmount(null); }}

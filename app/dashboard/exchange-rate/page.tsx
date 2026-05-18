@@ -14,17 +14,33 @@ export default async function ExchangeRatePage() {
     <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Exchange Rate</h1>
-        <p className="text-muted mt-1">Manage the USDC → BPLAY conversion rate</p>
+        <p className="text-muted mt-1">
+          Manage the BPLAY → USDC conversion rate
+        </p>
       </div>
 
       {current && (
         <Card className="border-primary/30 bg-primary/5">
-          <p className="text-xs text-muted uppercase tracking-wider mb-1">Current Rate</p>
+          <p className="text-xs text-muted uppercase tracking-wider mb-1">
+            Current Rate
+          </p>
           <p className="text-3xl font-bold text-foreground">
-            1 BPLAY = {parseFloat(current.rate) > 0 ? (1 / parseFloat(current.rate)).toFixed(4) : "0.0000"} USDC
+            1 BPLAY ={" "}
+            {parseFloat(current.rate) > 0
+              ? (1 / parseFloat(current.rate)).toFixed(4)
+              : "0.0000"}{" "}
+            USDC
           </p>
           <p className="text-xs text-muted mt-2">
-            Last updated: <LocalDate iso={current.updatedAt instanceof Date ? current.updatedAt.toISOString() : current.updatedAt} showTime />
+            Last updated:{" "}
+            <LocalDate
+              iso={
+                current.updatedAt instanceof Date
+                  ? current.updatedAt.toISOString()
+                  : current.updatedAt
+              }
+              showTime
+            />
           </p>
         </Card>
       )}
