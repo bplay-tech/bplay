@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, sum, count, inArray, sql, SQL } from "drizzle-orm";
 import { db } from "../client";
-import { transactions, type Transaction, type NewTransaction } from "../schema/transactions";
+import { transactions, type Transaction, type TransactionWithBuyerName, type NewTransaction } from "../schema/transactions";
 import { affiliations } from "../schema/affiliations";
 import { users } from "../schema/users";
 import { payoutRequests } from "../schema/payout-requests";
@@ -12,7 +12,7 @@ export type TransactionFilters = {
   status?: "pending" | "confirmed" | "failed";
 };
 
-export type { TransactionWithBuyerName } from "../schema/transactions";
+export type { TransactionWithBuyerName };
 export type TransactionWithUser = Transaction & { buyerName: string | null; userName: string };
 
 // Correlated subquery — looks up the buyer name via the shared tx_hash
