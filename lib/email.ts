@@ -9,18 +9,20 @@ const logoHtml = `<div style="margin-bottom:24px;white-space:nowrap"><span style
 export const sendInvitationEmail = async (
   to: string,
   name: string,
-  inviteUrl: string
+  inviteUrl: string,
+  inviterName: string
 ): Promise<void> => {
   const { error } = await resend.emails.send({
     from: process.env.MAIL_FROM!,
     to,
-    subject: "You've been invited to BPLAY Partner Portal",
+    subject: `${inviterName} invited you to BPLAY Partner Portal`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
         ${logoHtml}
         <h1 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111827">Welcome to BPLAY, ${name}!</h1>
         <p style="color:#6b7280;margin-bottom:24px;line-height:1.6">
-          You've been invited to join the BPLAY Partner Portal. Click the button below to set your password and activate your account.
+          <strong style="color:#111827">${inviterName}</strong> has invited you to join the BPLAY Partner Portal.
+          Click the button below to set your password and activate your account.
         </p>
         <a href="${inviteUrl}"
            style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-weight:600;
@@ -118,6 +120,47 @@ export const sendPasswordResetEmail = async (
   });
 
   if (error) throw new Error(`Failed to send password reset email: ${error.message}`);
+};
+
+export const sendDirectMessageEmail = async (
+  to: string,
+  recipientName: string,
+  senderName: string,
+  subject: string,
+  messageId: string,
+  appUrl: string
+): Promise<void> => {
+  const readUrl = `${appUrl}/dashboard/messages/${messageId}`;
+  const { error } = await resend.emails.send({
+    from: process.env.MAIL_FROM!,
+    to,
+    subject: `[BPLAY] ${subject}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        ${logoHtml}
+        <h1 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111827">
+          New message from ${senderName}
+        </h1>
+        <p style="color:#6b7280;margin-bottom:8px;line-height:1.6">
+          Hi ${recipientName}, you have a new direct message on the BPLAY Partner Portal.
+        </p>
+        <p style="color:#6b7280;margin-bottom:28px;line-height:1.6">
+          <strong style="color:#111827">Subject:</strong> ${subject}
+        </p>
+        <a href="${readUrl}"
+           style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-weight:600;
+                  padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px">
+          Read Message
+        </a>
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb">
+          <p style="color:#9ca3af;font-size:12px;margin:0">
+            You received this because you are a BPLAY Partner Portal member.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+  if (error) throw new Error(`Failed to send direct message email: ${error.message}`);
 };
 
 export const sendBroadcastEmail = async (

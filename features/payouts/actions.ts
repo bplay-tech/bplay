@@ -10,6 +10,7 @@ import {
 } from "@/db/queries/payout-requests";
 import { getAvailableBalance } from "@/db/queries/transactions";
 import { getSettingsByUser } from "@/db/queries/user-settings";
+import { walletAddressSchema } from "@/lib/zod";
 
 export async function requestPayoutAction(
   _prev: { error: string } | { success: true } | null,
@@ -34,8 +35,9 @@ export async function requestPayoutAction(
     return { error: "You already have a pending payout request." };
   }
 
-  if (method === "USDC" && !walletAddress?.trim()) {
-    return { error: "Wallet address is required for USDC payouts." };
+  if (method === "USDC") {
+    const parsed = walletAddressSchema.safeParse(walletAddress?.trim());
+    if (!parsed.success) return { error: "A valid Ethereum wallet address is required." };
   }
 
   await createPayoutRequest({

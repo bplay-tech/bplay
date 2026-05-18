@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 
-type Role = "USER" | "ADMIN" | "SUPER_ADMIN";
+type Role = "USER" | "SALES" | "ADMIN" | "SUPER_ADMIN";
 
 export const verifySession = async () => {
   const session = await auth();

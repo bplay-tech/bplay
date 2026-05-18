@@ -11,6 +11,8 @@ import { sendBroadcastEmail } from "@/lib/email";
 const broadcastSchema = z.object({
   title: z.string().min(1, "Title is required.").max(200, "Title is too long."),
   body: z.string().min(1, "Body is required.").max(5000, "Body is too long."),
+  attachmentUrl: z.string().url().optional().or(z.literal("")),
+  attachmentName: z.string().max(200).optional(),
 });
 
 const BATCH_SIZE = 5;
@@ -27,12 +29,16 @@ export async function sendBroadcastMessageAction(
   const parsed = broadcastSchema.safeParse({
     title: formData.get("title"),
     body: formData.get("body"),
+    attachmentUrl: formData.get("attachmentUrl") || undefined,
+    attachmentName: formData.get("attachmentName") || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const message = await createSystemMessage({
     title: parsed.data.title,
     body: parsed.data.body,
+    attachmentUrl: parsed.data.attachmentUrl || null,
+    attachmentName: parsed.data.attachmentName || null,
     createdBy: actor.id,
   });
 

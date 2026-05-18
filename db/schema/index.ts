@@ -10,3 +10,4 @@ export * from "./bplay-purchases";
 export * from "./invitation-tokens";
 export * from "./system-messages";
 export * from "./message-reads";
+export * from "./direct-messages";

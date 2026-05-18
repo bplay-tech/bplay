@@ -2,13 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
-import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { Table, type Column } from "@/components/ui/Table";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CreateMemberModal } from "./CreateMemberModal";
 import { TransferAddressModal } from "./TransferAddressModal";
 import { deleteUserAction, updateUserRoleAction, updateUserTierAction } from "@/features/team/actions";
@@ -28,6 +28,7 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [transferModal, setTransferModal] = useState<{ userId: string; current: string | null } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -47,30 +48,63 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
         </div>
       ),
     },
-    { header: "Role", key: "role", render: (r) => <StatusBadge status={r.role} /> },
+    {
+      header: "Role",
+      key: "role",
+      render: (r) => {
+        if (!isSuperAdmin || r.role === "SUPER_ADMIN") return <StatusBadge status={r.role} />;
+        return (
+          <Select
+            value={r.role}
+            disabled={changingRoleId === r.id}
+            onValueChange={(newRole) => {
+              setChangingRoleId(r.id);
+              startTransition(async () => {
+                const result = await updateUserRoleAction(r.id, newRole as "USER" | "SALES" | "ADMIN");
+                setChangingRoleId(null);
+                if ("error" in result) toast.error(result.error);
+                else toast.success(`Role updated to ${newRole}`);
+              });
+            }}
+            options={[
+              { value: "USER", label: "User" },
+              { value: "SALES", label: "Sales" },
+              { value: "ADMIN", label: "Admin" },
+            ]}
+          />
+        );
+      },
+    },
     {
       header: "Commission",
       key: "commission",
-      render: (r) => <span className="text-sm text-foreground">{parseFloat(r.tier.commissionRate)}%</span>,
+      render: (r) => (
+        <span className="text-sm text-foreground">
+          {r.role === "USER" ? "0%" : `${parseFloat(r.tier?.commissionRate ?? "0")}%`}
+        </span>
+      ),
     },
     {
       header: "Tier",
       key: "tier",
-      render: (r) =>
-        isSuperAdmin && r.role !== "SUPER_ADMIN" ? (
-          <Select
-            value={r.tier.name}
-            onValueChange={(tierName) => {
-              startTransition(async () => {
-                await updateUserTierAction(r.id, tierName);
-                toast.success(`Tier updated to ${tierName}`);
-              });
-            }}
-            options={tierOptions}
-          />
-        ) : (
-          <span className="text-sm text-muted">{r.tier.name}</span>
-        ),
+      render: (r) => {
+        if (r.role === "USER" || !r.tier) return <span className="text-sm text-muted">—</span>;
+        if (isSuperAdmin) {
+          return (
+            <Select
+              value={r.tier.name}
+              onValueChange={(tierName) => {
+                startTransition(async () => {
+                  await updateUserTierAction(r.id, tierName);
+                  toast.success(`Tier updated to ${tierName}`);
+                });
+              }}
+              options={tierOptions}
+            />
+          );
+        }
+        return <span className="text-sm text-muted">{r.tier.name}</span>;
+      },
     },
     {
       header: "Status",
@@ -107,54 +141,17 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
             ),
           },
           {
-            header: "Actions",
-            key: "actions",
+            header: "",
+            key: "delete",
             render: (r: UserWithTierAndWallet) => (
-              <DropdownMenu
-                trigger={
-                  <button className="p-1.5 rounded-md hover:bg-card-border/30 text-muted">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
-                }
-                items={[
-                  ...(r.role !== "SUPER_ADMIN"
-                    ? [
-                        {
-                          label:
-                            changingRoleId === r.id
-                              ? "Updating…"
-                              : r.role === "USER"
-                              ? "Promote to Admin"
-                              : "Demote to User",
-                          disabled: changingRoleId === r.id,
-                          onClick: () => {
-                            setChangingRoleId(r.id);
-                            const newRole = r.role === "USER" ? "ADMIN" : "USER";
-                            startTransition(async () => {
-                              const result = await updateUserRoleAction(r.id, newRole);
-                              setChangingRoleId(null);
-                              if ("error" in result) toast.error(result.error);
-                              else toast.success(`Role updated to ${newRole}`);
-                            });
-                          },
-                        },
-                      ]
-                    : []),
-                  {
-                    label: deletingId === r.id ? "Deleting…" : "Delete",
-                    disabled: deletingId === r.id,
-                    onClick: () => {
-                      setDeletingId(r.id);
-                      startTransition(async () => {
-                        await deleteUserAction(r.id);
-                        setDeletingId(null);
-                        toast.success("Member deleted");
-                      });
-                    },
-                    variant: "danger" as const,
-                  },
-                ]}
-              />
+              <button
+                onClick={() => setConfirmDeleteId(r.id)}
+                disabled={deletingId === r.id}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-danger border border-danger/30 hover:bg-danger/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {deletingId === r.id ? "Deleting…" : "Delete"}
+              </button>
             ),
           },
         ]
@@ -178,6 +175,24 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
           onOpenChange={(v) => { if (!v) setTransferModal(null); }}
         />
       )}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Delete member?"
+        description="This will permanently remove the member and all their data. This action cannot be undone."
+        confirmLabel={deletingId ? "Deleting…" : "Delete"}
+        loading={!!deletingId}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={() => {
+          if (!confirmDeleteId) return;
+          setDeletingId(confirmDeleteId);
+          setConfirmDeleteId(null);
+          startTransition(async () => {
+            await deleteUserAction(deletingId!);
+            setDeletingId(null);
+            toast.success("Member deleted");
+          });
+        }}
+      />
     </div>
   );
 }

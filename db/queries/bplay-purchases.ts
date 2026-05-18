@@ -3,6 +3,8 @@ import { db } from "../client";
 import { bplayPurchases, type BplayPurchase, type NewBplayPurchase } from "../schema/bplay-purchases";
 import { users } from "../schema/users";
 import { affiliations } from "../schema/affiliations";
+import { partnerTiers } from "../schema/partner-tiers";
+import { transactions } from "../schema/transactions";
 
 export type BplayPurchaseWithUser = BplayPurchase & { userName: string };
 
@@ -67,6 +69,58 @@ export const approveBplayPurchase = async (id: string, approvedBy: string): Prom
 
 export const rejectBplayPurchase = async (id: string): Promise<void> => {
   await db.update(bplayPurchases).set({ status: "failed" }).where(eq(bplayPurchases.id, id));
+};
+
+export const autoApprovePurchase = async (txHash: string): Promise<void> => {
+  await db.transaction(async (tx) => {
+    const [purchase] = await tx
+      .select()
+      .from(bplayPurchases)
+      .where(and(eq(bplayPurchases.txHash, txHash), eq(bplayPurchases.status, "pending_payment")))
+      .limit(1);
+
+    if (!purchase) return;
+
+    await tx
+      .update(bplayPurchases)
+      .set({ status: "tokens_transferred", approvedAt: new Date() })
+      .where(eq(bplayPurchases.id, purchase.id));
+
+    const [aff] = await tx
+      .select({ affiliateId: affiliations.affiliateId })
+      .from(affiliations)
+      .where(eq(affiliations.referredUserId, purchase.userId))
+      .limit(1);
+
+    if (!aff) return;
+
+    const [admin] = await tx
+      .select({ partnerTierId: users.partnerTierId })
+      .from(users)
+      .where(eq(users.id, aff.affiliateId))
+      .limit(1);
+
+    if (!admin) return;
+
+    const [tier] = await tx
+      .select({ commissionRate: partnerTiers.commissionRate })
+      .from(partnerTiers)
+      .where(eq(partnerTiers.id, admin.partnerTierId))
+      .limit(1);
+
+    if (!tier) return;
+
+    const commission = (parseFloat(purchase.usdcAmount) * parseFloat(tier.commissionRate)) / 100;
+    await tx.insert(transactions).values({
+      userId: aff.affiliateId,
+      type: "SALE",
+      amount: commission.toFixed(2),
+      buyerWallet: purchase.buyerWallet,
+      txHash: purchase.txHash,
+      status: "confirmed",
+      notes: `Auto-approved: ${purchase.bplayAmount} BPLAY`,
+    });
+  });
 };
 
 export const getBplayBalance = async (userId: string): Promise<number> => {

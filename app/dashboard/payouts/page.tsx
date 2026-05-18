@@ -4,15 +4,16 @@ import { getPayoutRequestsByUser, getAllPayoutRequests, getPendingPayoutByUser }
 import { PayoutsClient } from "./PayoutsClient";
 
 export default async function PayoutsPage() {
-  const user = await verifyRole(["ADMIN", "SUPER_ADMIN"]);
-  const [balance, history, pendingAll, myPending] = await Promise.all([
+  const user = await verifyRole(["SALES", "ADMIN", "SUPER_ADMIN"]);
+  const [balance, history, allRequests, myPending] = await Promise.all([
     getAvailableBalance(user.id),
     getPayoutRequestsByUser(user.id),
     user.role === "SUPER_ADMIN" ? getAllPayoutRequests() : Promise.resolve(undefined),
     getPendingPayoutByUser(user.id),
   ]);
 
-  const pending = pendingAll?.filter((r) => r.status === "pending");
+  const pendingAll = allRequests?.filter((r) => r.status === "pending");
+  const completedAll = allRequests?.filter((r) => r.status !== "pending");
   const onHold = myPending ? parseFloat(myPending.amount) : 0;
 
   return (
@@ -25,7 +26,8 @@ export default async function PayoutsPage() {
         availableBalance={balance}
         onHold={onHold}
         history={history}
-        pendingAll={user.role === "SUPER_ADMIN" ? pending : undefined}
+        pendingAll={user.role === "SUPER_ADMIN" ? pendingAll : undefined}
+        completedAll={user.role === "SUPER_ADMIN" ? completedAll : undefined}
         isSuperAdmin={user.role === "SUPER_ADMIN"}
       />
     </div>

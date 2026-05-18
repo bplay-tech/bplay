@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Coins,
   Send,
+  MessageSquare,
   ChevronDown,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -31,12 +32,13 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/dashboard/overview", icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: "Buy BPLAY", href: "/dashboard/buy", icon: <Coins className="h-4 w-4" /> },
-  { label: "Sales & Referrals", href: "/dashboard/sales", icon: <TrendingUp className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
-  { label: "Payouts", href: "/dashboard/payouts", icon: <Wallet className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Sales & Referrals", href: "/dashboard/sales", icon: <TrendingUp className="h-4 w-4" />, roles: ["SALES", "ADMIN", "SUPER_ADMIN"] },
+  { label: "Payouts", href: "/dashboard/payouts", icon: <Wallet className="h-4 w-4" />, roles: ["SALES", "ADMIN", "SUPER_ADMIN"] },
   { label: "Team", href: "/dashboard/team", icon: <Users className="h-4 w-4" />, roles: ["ADMIN", "SUPER_ADMIN"] },
   { label: "Purchases", href: "/dashboard/purchases", icon: <Package className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
   { label: "Exchange Rate", href: "/dashboard/exchange-rate", icon: <RefreshCw className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
   { label: "Compose", href: "/dashboard/compose", icon: <Send className="h-4 w-4" />, roles: ["SUPER_ADMIN"] },
+  { label: "Messages", href: "/dashboard/messages", icon: <MessageSquare className="h-4 w-4" /> },
   { label: "Settings", href: "/dashboard/settings", icon: <Settings className="h-4 w-4" /> },
 ];
 
@@ -54,7 +56,7 @@ function getInitials(name: string) {
 export function TopNav({ name, role, tierName, notificationBell }: TopNavProps) {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
-  const tierDisplay = TIER_DISPLAY[tierName as TierName];
+  const tierDisplay = role !== "USER" ? TIER_DISPLAY[tierName as TierName] : null;
   const roleLabel = role.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
   const visibleItems = NAV_ITEMS.filter(

@@ -11,6 +11,7 @@ import { payoutRequests } from "../schema/payout-requests";
 import { bplayPurchases } from "../schema/bplay-purchases";
 import { exchangeRates } from "../schema/exchange-rates";
 import { messageReads } from "../schema/message-reads";
+import { deleteDirectMessagesByUser } from "./direct-messages";
 
 export type UserWithTier = User & { tier: PartnerTier };
 export type UserWithTierAndWallet = UserWithTier & { walletAddress: string | null };
@@ -73,6 +74,7 @@ export const deleteUser = async (id: string): Promise<void> => {
 
   // Delete all records owned by this user
   await db.delete(messageReads).where(eq(messageReads.userId, id));
+  await deleteDirectMessagesByUser(id);
   await db.delete(userSettings).where(eq(userSettings.userId, id));
   await db.delete(userNotifications).where(eq(userNotifications.userId, id));
   await db.delete(invitationTokens).where(eq(invitationTokens.userId, id));

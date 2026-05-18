@@ -38,14 +38,17 @@ export async function createBplayPurchaseAction(
 }
 
 export async function recordTxHashAction(purchaseId: string, txHash: string): Promise<void> {
-  await verifySession();
+  const user = await verifySession();
+  const purchase = await getBplayPurchaseById(purchaseId);
+  if (!purchase || purchase.userId !== user.id) return; // silently ignore — prevents spoofing
   await updateBplayPurchaseTxHash(purchaseId, txHash);
 }
 
 export async function approvePurchaseAction(purchaseId: string): Promise<void> {
   const admin = await verifyRole(["SUPER_ADMIN"]);
-  await approveBplayPurchase(purchaseId, admin.id);
+  // Create commission first — if it throws, purchase stays unapproved (consistent state)
   await maybeCreateAffiliateCommission(purchaseId);
+  await approveBplayPurchase(purchaseId, admin.id);
   revalidatePath("/dashboard/purchases");
 }
 

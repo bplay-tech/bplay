@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sum, count, inArray, SQL } from "drizzle-orm";
+import { eq, and, gte, lte, sum, count, inArray, sql, SQL } from "drizzle-orm";
 import { db } from "../client";
 import { transactions, type Transaction, type NewTransaction } from "../schema/transactions";
 import { affiliations } from "../schema/affiliations";
@@ -12,7 +12,30 @@ export type TransactionFilters = {
   status?: "pending" | "confirmed" | "failed";
 };
 
-export type TransactionWithUser = Transaction & { userName: string };
+export type { TransactionWithBuyerName } from "../schema/transactions";
+export type TransactionWithUser = Transaction & { buyerName: string | null; userName: string };
+
+// Correlated subquery — looks up the buyer name via the shared tx_hash
+const buyerNameCol = sql<string | null>`(
+  SELECT u.name
+  FROM bplay_purchases bp
+  INNER JOIN users u ON bp.user_id = u.id
+  WHERE bp.tx_hash = transactions.tx_hash
+  LIMIT 1
+)`;
+
+const txCols = {
+  id: transactions.id,
+  userId: transactions.userId,
+  type: transactions.type,
+  amount: transactions.amount,
+  buyerWallet: transactions.buyerWallet,
+  txHash: transactions.txHash,
+  status: transactions.status,
+  notes: transactions.notes,
+  createdAt: transactions.createdAt,
+  buyerName: buyerNameCol,
+};
 
 function buildWhereConditions(filters?: TransactionFilters): SQL[] {
   const conditions: SQL[] = [];
@@ -26,12 +49,9 @@ function buildWhereConditions(filters?: TransactionFilters): SQL[] {
 export const getTransactionsByUser = async (
   userId: string,
   filters?: TransactionFilters
-): Promise<Transaction[]> => {
+): Promise<TransactionWithBuyerName[]> => {
   const conditions = [eq(transactions.userId, userId), ...buildWhereConditions(filters)];
-  return db
-    .select()
-    .from(transactions)
-    .where(and(...conditions));
+  return db.select(txCols).from(transactions).where(and(...conditions));
 };
 
 export const getAllTransactions = async (
@@ -39,18 +59,7 @@ export const getAllTransactions = async (
 ): Promise<TransactionWithUser[]> => {
   const conditions = buildWhereConditions(filters);
   const query = db
-    .select({
-      id: transactions.id,
-      userId: transactions.userId,
-      type: transactions.type,
-      amount: transactions.amount,
-      buyerWallet: transactions.buyerWallet,
-      txHash: transactions.txHash,
-      status: transactions.status,
-      notes: transactions.notes,
-      createdAt: transactions.createdAt,
-      userName: users.name,
-    })
+    .select({ ...txCols, userName: users.name })
     .from(transactions)
     .innerJoin(users, eq(transactions.userId, users.id));
 
@@ -63,7 +72,7 @@ export const getAllTransactions = async (
 export const getTeamTransactions = async (
   affiliateId: string,
   filters?: TransactionFilters
-): Promise<Transaction[]> => {
+): Promise<TransactionWithBuyerName[]> => {
   const referredUsers = await db
     .select({ referredUserId: affiliations.referredUserId })
     .from(affiliations)
@@ -73,10 +82,7 @@ export const getTeamTransactions = async (
   if (referredIds.length === 0) return [];
 
   const conditions = [inArray(transactions.userId, referredIds), ...buildWhereConditions(filters)];
-  return db
-    .select()
-    .from(transactions)
-    .where(and(...conditions));
+  return db.select(txCols).from(transactions).where(and(...conditions));
 };
 
 export const createTransaction = async (data: NewTransaction): Promise<Transaction> => {

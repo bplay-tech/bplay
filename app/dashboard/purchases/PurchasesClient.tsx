@@ -78,7 +78,15 @@ const COLUMNS: Column<BplayPurchaseWithUser>[] = [
         <span className="text-muted">—</span>
       ),
   },
-  { header: "Date", key: "date", render: (r) => <span className="text-muted text-xs">{new Date(r.createdAt).toLocaleDateString("en-US")}</span> },
+  {
+    header: "Date",
+    key: "date",
+    render: (r) => (
+      <span className="text-muted text-xs">
+        {new Date(r.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+      </span>
+    ),
+  },
   { header: "Status", key: "status", render: (r) => <StatusBadge status={r.status} /> },
   {
     header: "Actions",

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Newspaper, ChevronRight } from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import { getSystemMessagesWithReadStatus } from "@/db/queries/system-messages";
+import { LocalDate } from "@/components/ui/LocalDate";
 
 export default async function NewsPage() {
   const user = await verifySession();
@@ -9,7 +10,7 @@ export default async function NewsPage() {
   const unreadCount = messages.filter((m) => !m.isRead).length;
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+    <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
       <div className="flex items-center gap-3">
         <div className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: "rgba(124,92,255,0.2)" }}>
           <Newspaper className="h-4 w-4 text-purple-400" />
@@ -56,11 +57,7 @@ export default async function NewsPage() {
                     {msg.body.slice(0, 140)}{msg.body.length > 140 ? "…" : ""}
                   </p>
                   <p className="text-xs text-white/25 mt-2">
-                    {new Date(msg.createdAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    <LocalDate iso={msg.createdAt instanceof Date ? msg.createdAt.toISOString() : msg.createdAt} />
                     {" · "}{msg.authorName}
                   </p>
                 </div>

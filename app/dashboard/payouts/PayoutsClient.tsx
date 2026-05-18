@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { Download } from "lucide-react";
 import { RequestPayoutModal } from "./RequestPayoutModal";
 import { ApprovePayoutModal } from "./ApprovePayoutModal";
 import { Button } from "@/components/ui/Button";
@@ -16,19 +18,79 @@ interface PayoutsClientProps {
   onHold: number;
   history: PayoutRequest[];
   pendingAll?: PayoutRequestWithUser[];
+  completedAll?: PayoutRequestWithUser[];
   isSuperAdmin: boolean;
+}
+
+function formatLocalDateTime(d: Date | string): string {
+  return new Date(d).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
 }
 
 const HISTORY_COLUMNS: Column<PayoutRequest>[] = [
   { header: "Amount", key: "amount", render: (r) => <span className="font-medium">{formatUsd(r.amount)}</span> },
-  { header: "Method", key: "method", render: (r) => <span className="text-muted">{r.payoutMethod}</span> },
-  { header: "Date", key: "date", render: (r) => <span className="text-muted">{new Date(r.createdAt).toLocaleDateString("en-US")}</span> },
+  { header: "Date", key: "date", render: (r) => <span className="text-muted">{formatLocalDateTime(r.createdAt)}</span> },
   { header: "Status", key: "status", render: (r) => <StatusBadge status={r.status} /> },
 ];
 
-export function PayoutsClient({ availableBalance, onHold, history, pendingAll, isSuperAdmin }: PayoutsClientProps) {
+const ALL_HISTORY_COLUMNS: Column<PayoutRequestWithUser>[] = [
+  { header: "Partner", key: "partner", render: (r) => <span className="font-medium">{r.userName}</span> },
+  { header: "Amount", key: "amount", render: (r) => <span className="font-medium">{formatUsd(r.amount)}</span> },
+  { header: "Wallet", key: "wallet", render: (r) => <span className="text-muted font-mono text-xs">{r.walletAddress ? r.walletAddress.slice(0, 14) + "…" : "—"}</span> },
+  { header: "Date", key: "date", render: (r) => <span className="text-muted">{formatLocalDateTime(r.createdAt)}</span> },
+  { header: "Status", key: "status", render: (r) => <StatusBadge status={r.status} /> },
+];
+
+function exportHistoryCsv(data: PayoutRequest[] | PayoutRequestWithUser[], includePartner: boolean) {
+  const headers = includePartner
+    ? ["Partner", "Amount", "Wallet", "Date (UTC)", "Status"]
+    : ["Amount", "Wallet", "Date (UTC)", "Status"];
+
+  const rows = data.map((r) => {
+    const base = [
+      formatUsd(r.amount),
+      r.walletAddress ?? "",
+      new Date(r.createdAt).toISOString(),
+      r.status,
+    ];
+    return includePartner ? [(r as PayoutRequestWithUser).userName, ...base] : base;
+  });
+
+  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map((row) => row.map(esc).join(",")).join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "payout-history.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function PayoutsClient({
+  availableBalance,
+  onHold,
+  history,
+  pendingAll,
+  completedAll,
+  isSuperAdmin,
+}: PayoutsClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [approving, setApproving] = useState<PayoutRequestWithUser | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+
+  const handleReject = (id: string) => {
+    setRejectingId(id);
+    startTransition(async () => {
+      try {
+        await rejectPayoutAction(id);
+        toast.success("Payout rejected.");
+      } catch {
+        toast.error("Failed to reject payout. Please try again.");
+      } finally {
+        setRejectingId(null);
+      }
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,7 +137,13 @@ export function PayoutsClient({ availableBalance, onHold, history, pendingAll, i
                         <Button size="sm" variant="success" onClick={() => setApproving(req)}>
                           Approve
                         </Button>
-                        <Button size="sm" variant="danger" onClick={() => rejectPayoutAction(req.id)}>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          loading={rejectingId === req.id}
+                          disabled={rejectingId !== null}
+                          onClick={() => handleReject(req.id)}
+                        >
                           Reject
                         </Button>
                       </div>
@@ -88,8 +156,42 @@ export function PayoutsClient({ availableBalance, onHold, history, pendingAll, i
         </div>
       )}
 
+      {isSuperAdmin && completedAll && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-foreground">All Payout History</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportHistoryCsv(completedAll, true)}
+              disabled={completedAll.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
+          <Table
+            data={completedAll}
+            columns={ALL_HISTORY_COLUMNS}
+            keyExtractor={(r) => r.id}
+            emptyMessage="No completed payouts yet."
+          />
+        </div>
+      )}
+
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-3">Payout History</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-foreground">My Payout History</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportHistoryCsv(history, false)}
+            disabled={history.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
         <Table data={history} columns={HISTORY_COLUMNS} keyExtractor={(r) => r.id} emptyMessage="No payout requests yet." />
       </div>
     </div>

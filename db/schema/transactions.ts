@@ -18,3 +18,4 @@ export const transactions = pgTable("transactions", {
 
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
+export type TransactionWithBuyerName = Transaction & { buyerName: string | null };

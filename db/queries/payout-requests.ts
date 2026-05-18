@@ -50,11 +50,14 @@ export const approvePayoutRequest = async (
   txHash?: string
 ): Promise<void> => {
   await db.transaction(async (tx) => {
+    // Only update if still pending — prevents duplicate PAYOUT transactions on double-click
     const [request] = await tx
       .update(payoutRequests)
       .set({ status: "approved", reviewedBy: reviewerId, reviewedAt: new Date(), txHash: txHash ?? null })
-      .where(eq(payoutRequests.id, id))
+      .where(and(eq(payoutRequests.id, id), eq(payoutRequests.status, "pending")))
       .returning();
+
+    if (!request) return; // already approved or rejected — skip
 
     await tx.insert(transactions).values({
       userId: request.userId,
@@ -62,7 +65,7 @@ export const approvePayoutRequest = async (
       amount: request.amount,
       status: "confirmed",
       txHash: txHash ?? null,
-      notes: `Payout approved by ${reviewerId}`,
+      notes: `Payout approved`,
     });
   });
 };

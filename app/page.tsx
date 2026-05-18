@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BplayLogo } from "@/components/ui/BplayLogo";
+import { HomeTicker } from "@/components/home/HomeTicker";
 
 export default function Home() {
   return (
@@ -49,6 +50,9 @@ export default function Home() {
           </svg>
         </Link>
       </main>
+
+      {/* Live crypto ticker */}
+      <HomeTicker />
 
       {/* Footer */}
       <footer className="relative z-10 flex items-center justify-between px-8 py-6 text-xs" style={{ color: "#9CA3AF" }}>

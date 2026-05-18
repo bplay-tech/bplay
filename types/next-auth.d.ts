@@ -5,7 +5,7 @@ declare module "next-auth" {
     error?: "RefreshFailed";
     user: {
       id: string;
-      role: "USER" | "ADMIN" | "SUPER_ADMIN";
+      role: "USER" | "SALES" | "ADMIN" | "SUPER_ADMIN";
       tierName: string;
       referralCode: string;
     } & DefaultSession["user"];
@@ -13,7 +13,7 @@ declare module "next-auth" {
 
   interface User {
     id: string;
-    role: "USER" | "ADMIN" | "SUPER_ADMIN";
+    role: "USER" | "SALES" | "ADMIN" | "SUPER_ADMIN";
     tierName: string;
     referralCode: string;
   }
@@ -22,7 +22,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    role: "USER" | "ADMIN" | "SUPER_ADMIN";
+    role: "USER" | "SALES" | "ADMIN" | "SUPER_ADMIN";
     tierName: string;
     referralCode: string;
     accessTokenExpiry: number;

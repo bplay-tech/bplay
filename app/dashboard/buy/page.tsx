@@ -76,7 +76,7 @@ export default async function BuyPage() {
       <WalletActions />
 
       <p className="text-xs text-muted text-center">
-        Exchange rate: 1 USDC = {rateNum.toFixed(2)} BPLAY
+        1 BPLAY = ${rateNum > 0 ? (1 / rateNum).toFixed(4) : "0.0000"} USDC
       </p>
     </div>
   );

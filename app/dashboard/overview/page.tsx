@@ -23,6 +23,8 @@ import { formatUsd, formatBplay } from "@/lib/exchange";
 import { TIER_DISPLAY, type TierName } from "@/lib/tiers";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { TokenChart } from "@/features/purchases/components/TokenChart";
+import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
+import { CryptoTicker } from "@/components/dashboard/CryptoTicker";
 
 export default async function OverviewPage() {
   const user = await verifySession();
@@ -35,33 +37,17 @@ export default async function OverviewPage() {
   ]);
 
   const currentRate = parseFloat(rate?.rate ?? "0");
-  const bplayUsdValue = bplayBalance * currentRate;
+  // rate is BPLAY per USDC (e.g. 6.67), so 1 BPLAY = 1/rate USDC
+  const bplayUsdValue = currentRate > 0 ? bplayBalance / currentRate : 0;
   const firstName = user.name?.split(" ")[0] ?? "there";
 
   if (isUser) {
     const chartData = await getTokenPurchaseHistory(user.id);
 
     return (
-      <div className="flex flex-col gap-5">
-        {/* Welcome Banner */}
-        <div
-          className="relative rounded-2xl overflow-hidden p-7"
-          style={{
-            background: "linear-gradient(135deg, #1a1a3e 0%, #16213e 40%, #0d3b3b 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div
-            className="absolute top-0 right-0 w-80 h-full pointer-events-none"
-            style={{ background: "radial-gradient(ellipse at top right, rgba(0,180,150,0.18) 0%, transparent 70%)" }}
-          />
-          <div className="relative flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Welcome, {firstName}!</h1>
-              <p className="text-white/60 mt-1 text-sm">Your BPLAY token dashboard</p>
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-col gap-6">
+        <WelcomeBanner firstName={firstName} role={user.role} />
+        <CryptoTicker bplayRatePerUsdc={currentRate} />
 
         {/* Balance Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -161,46 +147,14 @@ export default async function OverviewPage() {
   const tierDisplay = TIER_DISPLAY[user.tierName as TierName];
 
   return (
-    <div className="flex flex-col gap-5">
-
-      {/* Welcome Banner */}
-      <div
-        className="relative rounded-2xl overflow-hidden p-7"
-        style={{
-          background: "linear-gradient(135deg, #1a1a3e 0%, #16213e 40%, #0d3b3b 100%)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <div
-          className="absolute top-0 right-0 w-80 h-full pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at top right, rgba(0,180,150,0.18) 0%, transparent 70%)" }}
-        />
-        <div className="relative flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Welcome back, {firstName}!</h1>
-            <p className="text-white/60 mt-1 text-sm">
-              You&apos;re earning{" "}
-              <span className="font-semibold" style={{ color: "#a78bfa" }}>
-                {commissionRate}% commission
-              </span>{" "}
-              on every sale
-            </p>
-          </div>
-          {tierDisplay && (
-            <div
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold shrink-0"
-              style={{
-                border: "1px solid rgba(167,139,250,0.5)",
-                background: "rgba(124,92,255,0.15)",
-                color: "#c4b5fd",
-              }}
-            >
-              <Zap className="h-4 w-4" />
-              {tierDisplay.label}
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="flex flex-col gap-6">
+      <WelcomeBanner
+        firstName={firstName}
+        role={user.role}
+        tierName={user.tierName}
+        commissionRate={commissionRate}
+      />
+      <CryptoTicker bplayRatePerUsdc={currentRate} />
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -306,7 +260,7 @@ export default async function OverviewPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           {[
-            { label: "Total Clicks", value: referralCount * 4 || 0 },
+            { label: "Referrals", value: referralCount },
             { label: "Conversions", value: stats.totalSales },
             { label: "Conv. Rate", value: `${conversionRate}%` },
             { label: "Commission", value: `${commissionRate}%` },
@@ -386,9 +340,8 @@ export default async function OverviewPage() {
                 ? "rgba(124,92,255,0.2)"
                 : "rgba(59,130,246,0.2)";
               const iconColor = isSale ? "#4ade80" : isReferral ? "#a78bfa" : "#60a5fa";
-              const amountColor = isPayout ? "#60a5fa" : isReferral ? "#a78bfa" : "#ffffff";
+              const amountColor = isPayout ? "#60a5fa" : isReferral ? "#a78bfa" : "#4ade80";
               const prefix = isPayout ? "-" : "+";
-              const commissionAmt = (parseFloat(tx.amount) * commissionRate) / 100;
 
               return (
                 <div key={tx.id} className="flex items-center justify-between py-4">
@@ -413,8 +366,8 @@ export default async function OverviewPage() {
                       {prefix}{formatUsd(tx.amount)}
                     </p>
                     {!isPayout && (
-                      <p className="text-xs mt-0.5" style={{ color: isSale ? "#4ade80" : "#a78bfa" }}>
-                        +{formatUsd(commissionAmt)} {isReferral ? "bonus" : "commission"}
+                      <p className="text-xs mt-0.5 text-white/30">
+                        {commissionRate}% {isReferral ? "referral bonus" : "commission"}
                       </p>
                     )}
                   </div>

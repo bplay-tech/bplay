@@ -11,16 +11,20 @@ export const createSystemMessage = async (data: NewSystemMessage): Promise<Syste
   return result[0];
 };
 
+const withAuthorSelect = {
+  id: systemMessages.id,
+  title: systemMessages.title,
+  body: systemMessages.body,
+  attachmentUrl: systemMessages.attachmentUrl,
+  attachmentName: systemMessages.attachmentName,
+  createdBy: systemMessages.createdBy,
+  createdAt: systemMessages.createdAt,
+  authorName: sql<string>`COALESCE(${users.name}, 'Unknown')`,
+};
+
 export const getAllSystemMessages = async (): Promise<SystemMessageWithAuthor[]> => {
   return db
-    .select({
-      id: systemMessages.id,
-      title: systemMessages.title,
-      body: systemMessages.body,
-      createdBy: systemMessages.createdBy,
-      createdAt: systemMessages.createdAt,
-      authorName: sql<string>`COALESCE(${users.name}, 'Unknown')`,
-    })
+    .select(withAuthorSelect)
     .from(systemMessages)
     .leftJoin(users, eq(systemMessages.createdBy, users.id))
     .orderBy(desc(systemMessages.createdAt));
@@ -28,14 +32,7 @@ export const getAllSystemMessages = async (): Promise<SystemMessageWithAuthor[]>
 
 export const getRecentSystemMessages = async (limit = 5): Promise<SystemMessageWithAuthor[]> => {
   return db
-    .select({
-      id: systemMessages.id,
-      title: systemMessages.title,
-      body: systemMessages.body,
-      createdBy: systemMessages.createdBy,
-      createdAt: systemMessages.createdAt,
-      authorName: sql<string>`COALESCE(${users.name}, 'Unknown')`,
-    })
+    .select(withAuthorSelect)
     .from(systemMessages)
     .leftJoin(users, eq(systemMessages.createdBy, users.id))
     .orderBy(desc(systemMessages.createdAt))
@@ -44,14 +41,7 @@ export const getRecentSystemMessages = async (limit = 5): Promise<SystemMessageW
 
 export const getSystemMessageById = async (id: string): Promise<SystemMessageWithAuthor | null> => {
   const result = await db
-    .select({
-      id: systemMessages.id,
-      title: systemMessages.title,
-      body: systemMessages.body,
-      createdBy: systemMessages.createdBy,
-      createdAt: systemMessages.createdAt,
-      authorName: sql<string>`COALESCE(${users.name}, 'Unknown')`,
-    })
+    .select(withAuthorSelect)
     .from(systemMessages)
     .leftJoin(users, eq(systemMessages.createdBy, users.id))
     .where(eq(systemMessages.id, id))
@@ -95,12 +85,7 @@ export const getSystemMessagesWithReadStatus = async (
 ): Promise<SystemMessageWithReadStatus[]> => {
   const rows = await db
     .select({
-      id: systemMessages.id,
-      title: systemMessages.title,
-      body: systemMessages.body,
-      createdBy: systemMessages.createdBy,
-      createdAt: systemMessages.createdAt,
-      authorName: sql<string>`COALESCE(${users.name}, 'Unknown')`,
+      ...withAuthorSelect,
       readId: messageReads.id,
     })
     .from(systemMessages)

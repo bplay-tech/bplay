@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 import { createHmac } from "crypto";
-import { getPurchaseByTxHash } from "@/db/queries/bplay-purchases";
+import { getPurchaseByTxHash, autoApprovePurchase } from "@/db/queries/bplay-purchases";
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
   const expected = createHmac("sha256", secret).update(body).digest("hex");
@@ -27,10 +27,13 @@ export async function POST(request: NextRequest) {
   if (!txHash) return Response.json({ ok: true });
 
   const existing = await getPurchaseByTxHash(txHash);
-  if (existing) {
-    return Response.json({ ok: true, skipped: true });
+  if (!existing) {
+    return Response.json({ ok: true, unknown: true });
   }
 
-  console.info("[alchemy-webhook] New payment detected", { txHash });
+  if (existing.status === "pending_payment") {
+    await autoApprovePurchase(txHash);
+  }
+
   return Response.json({ ok: true });
 }

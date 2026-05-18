@@ -17,7 +17,7 @@ async function seedPartnerTiers() {
     .values([
       { name: "Bronze", commissionRate: "9.00", minSalesThreshold: 0, color: "#CD7F32" },
       { name: "Silver", commissionRate: "11.00", minSalesThreshold: 10, color: "#9CA3AF" },
-      { name: "Gold", commissionRate: "13.50", minSalesThreshold: 25, color: "#F59E0B" },
+      { name: "Platinum", commissionRate: "13.50", minSalesThreshold: 25, color: "#F59E0B" },
       { name: "Platinum", commissionRate: "17.00", minSalesThreshold: 50, color: "#67E8F9" },
     ])
     .onConflictDoUpdate({
@@ -44,12 +44,12 @@ async function seedExchangeRate() {
 async function seedSuperAdmin() {
   console.log("Seeding super admin...");
 
-  const goldTier = await db
+  const platinumTier = await db
     .select()
     .from(partnerTiers)
-    .where(eq(partnerTiers.name, "Gold"))
+    .where(eq(partnerTiers.name, "Platinum"))
     .limit(1);
-  if (!goldTier[0]) throw new Error("Gold tier not found — ensure tiers are seeded first");
+  if (!platinumTier[0]) throw new Error("Gold tier not found — ensure tiers are seeded first");
 
   const passwordHash = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 12);
   const existing = await db
@@ -65,7 +65,7 @@ async function seedSuperAdmin() {
       .update(users)
       .set({
         role: "SUPER_ADMIN",
-        partnerTierId: goldTier[0].id,
+        partnerTierId: platinumTier[0].id,
         passwordHash,
         isActive: true,
         referralCode: "BPLAY-SA",
@@ -83,7 +83,7 @@ async function seedSuperAdmin() {
         passwordHash,
         name: "Super Admin",
         role: "SUPER_ADMIN",
-        partnerTierId: goldTier[0].id,
+        partnerTierId: platinumTier[0].id,
         referralCode: "BPLAY-SA",
       })
       .returning();

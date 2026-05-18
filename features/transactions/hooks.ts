@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { TransactionFilters } from "@/db/queries/transactions";
+import type { TransactionWithBuyerName } from "@/db/schema/transactions";
 
 function buildParams(filters: TransactionFilters): URLSearchParams {
   const p = new URLSearchParams();
@@ -15,6 +16,10 @@ function buildParams(filters: TransactionFilters): URLSearchParams {
 export const useTransactions = (filters: TransactionFilters) =>
   useQuery({
     queryKey: ["transactions", filters],
-    queryFn: () =>
-      fetch(`/api/transactions?${buildParams(filters)}`).then((r) => r.json()),
+    queryFn: async () => {
+      const r = await fetch(`/api/transactions?${buildParams(filters)}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json() as Promise<TransactionWithBuyerName[]>;
+    },
+    retry: 1,
   });

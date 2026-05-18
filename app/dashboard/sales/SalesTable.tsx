@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { formatUsd } from "@/lib/exchange";
 import { formatAddress } from "@/lib/utils";
 import type { TransactionFilters } from "@/db/queries/transactions";
-import type { Transaction } from "@/db/schema/transactions";
+import type { TransactionWithBuyerName } from "@/db/schema/transactions";
 
 const TYPE_OPTIONS = [
   { value: "ALL", label: "All Types" },
@@ -26,8 +26,15 @@ const STATUS_OPTIONS = [
   { value: "failed", label: "Failed" },
 ];
 
-const COLUMNS: Column<Transaction>[] = [
+const COLUMNS: Column<TransactionWithBuyerName>[] = [
   { header: "Type", key: "type", render: (row) => <StatusBadge status={row.type} /> },
+  {
+    header: "Customer",
+    key: "buyerName",
+    render: (row) => (
+      <span className="text-sm text-foreground">{row.buyerName ?? "—"}</span>
+    ),
+  },
   { header: "Amount", key: "amount", render: (row) => <span className="font-medium">{formatUsd(row.amount)}</span> },
   {
     header: "Wallet",
@@ -42,23 +49,27 @@ const COLUMNS: Column<Transaction>[] = [
     header: "Date",
     key: "date",
     render: (row) => (
-      <span className="text-muted">{new Date(row.createdAt).toLocaleDateString("en-US")}</span>
+      <span className="text-muted">
+        {new Date(row.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+      </span>
     ),
   },
   { header: "Status", key: "status", render: (row) => <StatusBadge status={row.status} /> },
 ];
 
-function exportCsv(data: Transaction[]) {
-  const headers = ["ID", "Type", "Amount", "Wallet", "Date", "Status"];
+function exportCsv(data: TransactionWithBuyerName[]) {
+  const headers = ["ID", "Type", "Customer", "Amount", "Wallet", "Date", "Status"];
   const rows = data.map((t) => [
     t.id,
     t.type,
+    t.buyerName ?? "",
     t.amount,
     t.buyerWallet ?? "",
     new Date(t.createdAt).toISOString(),
     t.status,
   ]);
-  const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;
@@ -69,7 +80,7 @@ function exportCsv(data: Transaction[]) {
 
 export function SalesTable() {
   const [filters, setFilters] = useState<TransactionFilters>({});
-  const { data = [], isLoading } = useTransactions(filters);
+  const { data = [], isLoading, isError } = useTransactions(filters);
 
   return (
     <div className="flex flex-col gap-4">
@@ -104,6 +115,8 @@ export function SalesTable() {
       </div>
       {isLoading ? (
         <p className="text-muted text-sm">Loading...</p>
+      ) : isError ? (
+        <p className="text-danger text-sm">Failed to load transactions. Please refresh.</p>
       ) : (
         <Table data={data} columns={COLUMNS} keyExtractor={(r) => r.id} emptyMessage="No transactions found." />
       )}

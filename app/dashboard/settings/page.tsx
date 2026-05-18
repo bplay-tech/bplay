@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
 import { getUserById } from "@/db/queries/users";
 import { getSettingsByUser } from "@/db/queries/user-settings";
@@ -15,13 +16,15 @@ export default async function SettingsPage() {
     getNotificationsByUser(session.id),
   ]);
 
+  if (!user) redirect("/login"); // session token belongs to a deleted account
+
   return (
     <div className="flex flex-col gap-6 w-full sm:max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted mt-1">Manage your profile and notifications</p>
       </div>
-      <ProfileForm name={user?.name ?? session.name ?? ""} email={user?.email ?? session.email ?? ""} />
+      <ProfileForm name={user.name} email={user.email} />
       {!isUser && <PayoutSettingsForm settings={settings} />}
       <NotificationsForm notifications={notifications} />
     </div>

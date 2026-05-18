@@ -9,6 +9,7 @@ import { createUserAction } from "@/features/team/actions";
 
 const ROLE_OPTIONS = [
   { value: "USER", label: "User" },
+  { value: "SALES", label: "Sales" },
   { value: "ADMIN", label: "Admin" },
 ];
 

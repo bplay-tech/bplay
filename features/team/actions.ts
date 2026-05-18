@@ -5,6 +5,7 @@ import { verifyRole } from "@/lib/dal";
 import { createUser, updateUser, deleteUser } from "@/db/queries/users";
 import { createAffiliation } from "@/db/queries/affiliations";
 import { getPartnerTierByName } from "@/db/queries/partner-tiers";
+import { getBplayBalance } from "@/db/queries/bplay-purchases";
 import { upsertSettings } from "@/db/queries/user-settings";
 import { upsertNotifications } from "@/db/queries/user-notifications";
 import { generateUniqueReferralCode } from "@/lib/referral";
@@ -49,7 +50,7 @@ export async function createUserAction(
   const token = await signInviteToken(newUser.id, name);
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite?token=${token}`;
   try {
-    await sendInvitationEmail(email, name, inviteUrl);
+    await sendInvitationEmail(email, name, inviteUrl, actor.name ?? "BPLAY");
   } catch (err) {
     return { error: `User created but invitation email failed: ${(err as Error).message}` };
   }
@@ -74,10 +75,23 @@ export async function updateUserTierAction(userId: string, tierName: string): Pr
 
 export async function updateUserRoleAction(
   userId: string,
-  role: "USER" | "ADMIN"
+  role: "USER" | "SALES" | "ADMIN"
 ): Promise<{ error: string } | { success: true }> {
   await verifyRole(["SUPER_ADMIN"]);
-  await updateUser(userId, { role });
+
+  if (role === "SALES") {
+    const [balance, silverTier, bronzeTier] = await Promise.all([
+      getBplayBalance(userId),
+      getPartnerTierByName("Silver"),
+      getPartnerTierByName("Bronze"),
+    ]);
+    const tier = balance >= 50_000 ? silverTier : bronzeTier;
+    if (!tier) return { error: "Required tier not found. Run db:seed first." };
+    await updateUser(userId, { role, partnerTierId: tier.id });
+  } else {
+    await updateUser(userId, { role });
+  }
+
   revalidatePath("/dashboard/team");
   return { success: true };
 }

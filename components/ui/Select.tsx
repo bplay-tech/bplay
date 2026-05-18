@@ -16,13 +16,14 @@ interface SelectProps {
   label?: string;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
-export function Select({ value, onValueChange, options, label, placeholder, className }: SelectProps) {
+export function Select({ value, onValueChange, options, label, placeholder, className, disabled }: SelectProps) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && <span className="text-sm font-medium text-foreground">{label}</span>}
-      <RadixSelect.Root value={value} onValueChange={onValueChange}>
+      <RadixSelect.Root value={value} onValueChange={onValueChange} disabled={disabled}>
         <RadixSelect.Trigger className="flex h-10 w-full items-center justify-between rounded-lg border border-card-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
           <RadixSelect.Value placeholder={placeholder ?? "Select..."} />
           <RadixSelect.Icon>
