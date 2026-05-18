@@ -68,6 +68,20 @@ export function CryptoTicker({ bplayRatePerUsdc }: CryptoTickerProps) {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: bplayData } = useQuery<{ ratePerUsdc: number }>({
+    queryKey: ["bplayRate"],
+    queryFn: async () => {
+      const res = await fetch("/api/bplay-rate");
+      if (!res.ok) return { ratePerUsdc: bplayRatePerUsdc };
+      return res.json();
+    },
+    placeholderData: { ratePerUsdc: bplayRatePerUsdc },
+    refetchInterval: 30 * 1000,
+    staleTime: 0,
+  });
+
+  const liveBplayRate = bplayData?.ratePerUsdc ?? bplayRatePerUsdc;
+
   const coins = data ?? [];
   const track = [...coins, ...coins];
 
@@ -89,9 +103,9 @@ export function CryptoTicker({ bplayRatePerUsdc }: CryptoTickerProps) {
       `}</style>
 
       <div className="flex items-center gap-3">
-        {/* Static BPLAY card */}
+        {/* BPLAY card — polled every 30s */}
         <div className="shrink-0">
-          <BplayCard ratePerUsdc={bplayRatePerUsdc} />
+          <BplayCard ratePerUsdc={liveBplayRate} />
         </div>
 
         {/* Scrolling coins */}

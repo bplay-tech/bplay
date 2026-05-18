@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/adnan/.claude/plugins/cache/claude-code-skills/engineering-skills/2.1.2/senior-fullstack/**)",
+      "Bash(npx playwright *)",
+      "Bash(set PLAYWRIGHT_BASE_URL=http://localhost:3001)",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/exchange-rate.spec.ts --reporter=list)",
+      "Bash(node -e \"const p = require\\('./node_modules/@neondatabase/serverless/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"const src = require\\('fs'\\).readFileSync\\('./node_modules/@neondatabase/serverless/index.js', 'utf8'\\).slice\\(0, 3000\\); console.log\\(src\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/exchange-rate.spec.ts --project=chromium)",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/exchange-rate.spec.ts --project=chromium --grep \"successful update\")",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/exchange-rate.spec.ts --project=chromium --grep \"inaccessible without auth\")",
+      "Bash(del \"d:\\\\Bplay\\\\next\\\\middleware.ts\")",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/exchange-rate.spec.ts --project=chromium --grep \"authenticate\")",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/auth.setup.ts)"
+    ]
+  }
+}

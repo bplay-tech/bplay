@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { verifyRole } from "@/lib/dal";
 import { getCurrentExchangeRate } from "@/db/queries/exchange-rates";
 import { Card } from "@/components/ui/Card";
@@ -19,7 +21,7 @@ export default async function ExchangeRatePage() {
         <Card className="border-primary/30 bg-primary/5">
           <p className="text-xs text-muted uppercase tracking-wider mb-1">Current Rate</p>
           <p className="text-3xl font-bold text-foreground">
-            1 USDC = {parseFloat(current.rate).toFixed(4)} BPLAY
+            1 BPLAY = {parseFloat(current.rate) > 0 ? (1 / parseFloat(current.rate)).toFixed(4) : "0.0000"} USDC
           </p>
           <p className="text-xs text-muted mt-2">
             Last updated: <LocalDate iso={current.updatedAt instanceof Date ? current.updatedAt.toISOString() : current.updatedAt} showTime />

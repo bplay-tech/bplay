@@ -8,7 +8,7 @@ function getDb(): NeonHttpDatabase<typeof schema> {
   if (!_db) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL environment variable is not set");
-    _db = drizzle(neon(url), { schema });
+    _db = drizzle(neon(url, { fetchOptions: { cache: "no-store" } }), { schema });
   }
   return _db;
 }

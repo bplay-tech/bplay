@@ -1,8 +1,10 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { desc } from "drizzle-orm";
 import { db } from "../client";
 import { exchangeRates, type ExchangeRate, type NewExchangeRate } from "../schema";
 
 export const getCurrentExchangeRate = async (): Promise<ExchangeRate | null> => {
+  noStore();
   const result = await db
     .select()
     .from(exchangeRates)
