@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { verifyRole } from "@/lib/dal";
 import { createUser, updateUser, deleteUser } from "@/db/queries/users";
-import { createAffiliation } from "@/db/queries/affiliations";
+import { createAffiliation, getAffiliationByReferredUser } from "@/db/queries/affiliations";
 import { getPartnerTierByName } from "@/db/queries/partner-tiers";
 import { getBplayBalance } from "@/db/queries/bplay-purchases";
 import { upsertSettings } from "@/db/queries/user-settings";
@@ -20,11 +20,12 @@ export async function createUserAction(
   const actor = await verifyRole(["ADMIN", "SUPER_ADMIN"]);
   const name = (formData.get("name") as string)?.trim();
   const emailResult = emailSchema.safeParse(formData.get("email"));
-  const role = formData.get("role") as "USER" | "ADMIN";
+  const role = formData.get("role") as "USER" | "SALES" | "ADMIN";
 
   if (!name || !emailResult.success || !role) return { error: "All fields are required." };
   const email = emailResult.data;
-  if (actor.role === "ADMIN" && role !== "USER") return { error: "Admins can only create user accounts." };
+  if (actor.role === "ADMIN" && role !== "USER" && role !== "SALES")
+    return { error: "Admins can only create User or Sales accounts." };
 
   const bronzeTier = await getPartnerTierByName("Bronze");
   if (!bronzeTier) return { error: "Bronze tier not found. Run db:seed first." };
@@ -77,7 +78,14 @@ export async function updateUserRoleAction(
   userId: string,
   role: "USER" | "SALES" | "ADMIN"
 ): Promise<{ error: string } | { success: true }> {
-  await verifyRole(["SUPER_ADMIN"]);
+  const actor = await verifyRole(["ADMIN", "SUPER_ADMIN"]);
+
+  if (actor.role === "ADMIN") {
+    if (role === "ADMIN") return { error: "Admins cannot assign the Admin role." };
+    const affiliation = await getAffiliationByReferredUser(userId);
+    if (!affiliation || affiliation.affiliateId !== actor.id)
+      return { error: "You can only manage users you referred." };
+  }
 
   if (role === "SALES") {
     const [balance, silverTier, bronzeTier] = await Promise.all([

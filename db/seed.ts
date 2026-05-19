@@ -7,18 +7,44 @@ import { userSettings } from "./schema/user-settings";
 import { userNotifications } from "./schema/user-notifications";
 import bcrypt from "bcryptjs";
 
-const SUPER_ADMIN_EMAIL = "admin@bplay.io";
-const SUPER_ADMIN_PASSWORD = "Bplay#SA2026!xK9m";
+const getEnv = (key: string): string => {
+  const val = process.env[key];
+  if (!val) throw new Error(`${key} must be set in env`);
+  return val;
+};
+
+const SUPER_ADMIN_EMAIL = getEnv("SUPER_ADMIN_EMAIL");
+const SUPER_ADMIN_PASSWORD = getEnv("SUPER_ADMIN_PASSWORD");
 
 async function seedPartnerTiers() {
   console.log("Seeding partner tiers...");
   await db
     .insert(partnerTiers)
     .values([
-      { name: "Bronze", commissionRate: "9.00", minSalesThreshold: 0, color: "#CD7F32" },
-      { name: "Silver", commissionRate: "11.00", minSalesThreshold: 10, color: "#9CA3AF" },
-      { name: "Platinum", commissionRate: "13.50", minSalesThreshold: 25, color: "#F59E0B" },
-      { name: "Platinum", commissionRate: "17.00", minSalesThreshold: 50, color: "#67E8F9" },
+      {
+        name: "Bronze",
+        commissionRate: "9.00",
+        minSalesThreshold: 0,
+        color: "#CD7F32",
+      },
+      {
+        name: "Silver",
+        commissionRate: "11.00",
+        minSalesThreshold: 10,
+        color: "#9CA3AF",
+      },
+      {
+        name: "Gold",
+        commissionRate: "13.50",
+        minSalesThreshold: 25,
+        color: "#D4AF37",
+      },
+      {
+        name: "Platinum",
+        commissionRate: "17.00",
+        minSalesThreshold: 50,
+        color: "#67E8F9",
+      },
     ])
     .onConflictDoUpdate({
       target: partnerTiers.name,
@@ -49,7 +75,8 @@ async function seedSuperAdmin() {
     .from(partnerTiers)
     .where(eq(partnerTiers.name, "Platinum"))
     .limit(1);
-  if (!platinumTier[0]) throw new Error("Gold tier not found — ensure tiers are seeded first");
+  if (!platinumTier[0])
+    throw new Error("Gold tier not found — ensure tiers are seeded first");
 
   const passwordHash = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 12);
   const existing = await db
@@ -74,7 +101,9 @@ async function seedSuperAdmin() {
       .where(eq(users.email, SUPER_ADMIN_EMAIL))
       .returning();
     adminId = updated.id;
-    console.log("  Super admin updated (role promoted to SUPER_ADMIN, password reset)");
+    console.log(
+      "  Super admin updated (role promoted to SUPER_ADMIN, password reset)",
+    );
   } else {
     const [created] = await db
       .insert(users)
@@ -91,8 +120,14 @@ async function seedSuperAdmin() {
     console.log("  Super admin created");
   }
 
-  await db.insert(userSettings).values({ userId: adminId }).onConflictDoNothing();
-  await db.insert(userNotifications).values({ userId: adminId }).onConflictDoNothing();
+  await db
+    .insert(userSettings)
+    .values({ userId: adminId })
+    .onConflictDoNothing();
+  await db
+    .insert(userNotifications)
+    .values({ userId: adminId })
+    .onConflictDoNothing();
 
   console.log("");
   console.log("  ┌─────────────────────────────────────────┐");

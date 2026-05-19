@@ -52,7 +52,20 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
       header: "Role",
       key: "role",
       render: (r) => {
-        if (!isSuperAdmin || r.role === "SUPER_ADMIN") return <StatusBadge status={r.role} />;
+        const canEdit = isSuperAdmin
+          ? r.role !== "SUPER_ADMIN"
+          : r.role !== "SUPER_ADMIN" && r.role !== "ADMIN";
+        if (!canEdit) return <StatusBadge status={r.role} />;
+        const roleOptions = isSuperAdmin
+          ? [
+              { value: "USER", label: "User" },
+              { value: "SALES", label: "Sales" },
+              { value: "ADMIN", label: "Admin" },
+            ]
+          : [
+              { value: "USER", label: "User" },
+              { value: "SALES", label: "Sales" },
+            ];
         return (
           <Select
             value={r.role}
@@ -66,11 +79,7 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
                 else toast.success(`Role updated to ${newRole}`);
               });
             }}
-            options={[
-              { value: "USER", label: "User" },
-              { value: "SALES", label: "Sales" },
-              { value: "ADMIN", label: "Admin" },
-            ]}
+            options={roleOptions}
           />
         );
       },
@@ -166,7 +175,7 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
         </div>
       )}
       <Table data={members} columns={columns} keyExtractor={(r) => r.id} emptyMessage="No team members found." />
-      {canManageMembers && <CreateMemberModal open={modalOpen} onOpenChange={setModalOpen} isSuperAdmin={isSuperAdmin} />}
+      {canManageMembers && <CreateMemberModal open={modalOpen} onOpenChange={setModalOpen} actorRole={role} />}
       {transferModal && (
         <TransferAddressModal
           userId={transferModal.userId}

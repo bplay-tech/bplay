@@ -7,31 +7,35 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { createUserAction } from "@/features/team/actions";
 
-const ROLE_OPTIONS = [
+const SUPER_ADMIN_ROLE_OPTIONS = [
   { value: "USER", label: "User" },
   { value: "SALES", label: "Sales" },
   { value: "ADMIN", label: "Admin" },
 ];
 
+const ADMIN_ROLE_OPTIONS = [
+  { value: "USER", label: "User" },
+  { value: "SALES", label: "Sales" },
+];
+
 interface CreateMemberModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  isSuperAdmin?: boolean;
+  actorRole: "ADMIN" | "SUPER_ADMIN";
 }
 
-export function CreateMemberModal({ open, onOpenChange, isSuperAdmin = false }: CreateMemberModalProps) {
+export function CreateMemberModal({ open, onOpenChange, actorRole }: CreateMemberModalProps) {
   const [state, action, pending] = useActionState(createUserAction, null);
   const [role, setRole] = useState("USER");
+  const roleOptions = actorRole === "SUPER_ADMIN" ? SUPER_ADMIN_ROLE_OPTIONS : ADMIN_ROLE_OPTIONS;
 
   return (
     <Modal open={open} onOpenChange={onOpenChange} title="Invite Team Member">
       <form action={action} className="flex flex-col gap-4">
         <Input name="name" label="Full Name" placeholder="Jane Doe" required />
         <Input name="email" label="Email" type="email" placeholder="jane@example.com" required />
-        {isSuperAdmin && (
-          <Select label="Role" value={role} onValueChange={setRole} options={ROLE_OPTIONS} />
-        )}
-        <input type="hidden" name="role" value={isSuperAdmin ? role : "USER"} />
+        <Select label="Role" value={role} onValueChange={setRole} options={roleOptions} />
+        <input type="hidden" name="role" value={role} />
         {state && "error" in state && <p className="text-sm text-danger">{state.error}</p>}
         {state && "success" in state && (
           <p className="text-sm text-success">Invitation email sent successfully!</p>
