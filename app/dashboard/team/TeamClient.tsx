@@ -13,17 +13,20 @@ import { CreateMemberModal } from "./CreateMemberModal";
 import { TransferAddressModal } from "./TransferAddressModal";
 import { deleteUserAction, updateUserRoleAction, updateUserTierAction } from "@/features/team/actions";
 import { formatAddress } from "@/lib/utils";
-import type { UserWithTierAndWallet } from "@/db/queries/users";
+import type { UserWithTierWalletAndManager } from "@/db/queries/users";
 import type { PartnerTier } from "@/db/schema/partner-tiers";
 
 interface TeamClientProps {
-  members: UserWithTierAndWallet[];
+  members: UserWithTierWalletAndManager[];
   tiers: PartnerTier[];
   role: "ADMIN" | "SUPER_ADMIN";
 }
 
 export function TeamClient({ members, tiers, role }: TeamClientProps) {
   const isSuperAdmin = role === "SUPER_ADMIN";
+  const adminUsers = members
+    .filter((m) => m.role === "ADMIN")
+    .map((m) => ({ id: m.id, name: m.name }));
   const canManageMembers = role === "ADMIN" || role === "SUPER_ADMIN";
   const [modalOpen, setModalOpen] = useState(false);
   const [transferModal, setTransferModal] = useState<{ userId: string; current: string | null } | null>(null);
@@ -34,7 +37,7 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
 
   const tierOptions = tiers.map((t) => ({ value: t.name, label: t.name }));
 
-  const columns: Column<UserWithTierAndWallet>[] = [
+  const columns: Column<UserWithTierWalletAndManager>[] = [
     {
       header: "Member",
       key: "member",
@@ -115,6 +118,20 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
         return <span className="text-sm text-muted">{r.tier.name}</span>;
       },
     },
+    ...(isSuperAdmin
+      ? [
+          {
+            header: "Admin",
+            key: "manager",
+            render: (r: UserWithTierWalletAndManager) =>
+              r.role === "USER" || r.role === "SALES" ? (
+                <span className="text-sm text-muted">{r.managerName ?? "—"}</span>
+              ) : (
+                <span className="text-sm text-muted">—</span>
+              ),
+          },
+        ]
+      : []),
     {
       header: "Status",
       key: "status",
@@ -134,7 +151,7 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
           {
             header: "Transfer Address",
             key: "transferAddress",
-            render: (r: UserWithTierAndWallet) => (
+            render: (r: UserWithTierWalletAndManager) => (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-muted">
                   {r.transferAddress ? formatAddress(r.transferAddress) : "—"}
@@ -152,7 +169,7 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
           {
             header: "",
             key: "delete",
-            render: (r: UserWithTierAndWallet) => (
+            render: (r: UserWithTierWalletAndManager) => (
               <button
                 onClick={() => setConfirmDeleteId(r.id)}
                 disabled={deletingId === r.id}
@@ -175,7 +192,14 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
         </div>
       )}
       <Table data={members} columns={columns} keyExtractor={(r) => r.id} emptyMessage="No team members found." />
-      {canManageMembers && <CreateMemberModal open={modalOpen} onOpenChange={setModalOpen} actorRole={role} />}
+      {canManageMembers && (
+        <CreateMemberModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          actorRole={role}
+          adminUsers={adminUsers}
+        />
+      )}
       {transferModal && (
         <TransferAddressModal
           userId={transferModal.userId}
@@ -193,10 +217,11 @@ export function TeamClient({ members, tiers, role }: TeamClientProps) {
         onCancel={() => setConfirmDeleteId(null)}
         onConfirm={() => {
           if (!confirmDeleteId) return;
-          setDeletingId(confirmDeleteId);
+          const idToDelete = confirmDeleteId;
+          setDeletingId(idToDelete);
           setConfirmDeleteId(null);
           startTransition(async () => {
-            await deleteUserAction(deletingId!);
+            await deleteUserAction(idToDelete);
             setDeletingId(null);
             toast.success("Member deleted");
           });

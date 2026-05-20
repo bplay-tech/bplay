@@ -20,6 +20,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BPLAY Partner Portal",
   description: "Manage your BPLAY partner commissions, referrals, and payouts",
+  metadataBase: new URL("https://bplay.tech"),
+  openGraph: {
+    title: "BPLAY Partner Portal",
+    description: "Manage your BPLAY partner commissions, referrals, and payouts",
+    url: "https://bplay.tech",
+    siteName: "BPLAY",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BPLAY Partner Portal" }],
+    type: "website",
+  },
 };
 
 export default async function RootLayout({

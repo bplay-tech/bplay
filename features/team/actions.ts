@@ -42,8 +42,14 @@ export async function createUserAction(
     isActive: false,
   });
 
+  const adminId = formData.get("adminId") as string | null;
+  const affiliateId =
+    actor.role === "SUPER_ADMIN" && (role === "USER" || role === "SALES") && adminId
+      ? adminId
+      : actor.id;
+
   await Promise.all([
-    createAffiliation({ affiliateId: actor.id, referredUserId: newUser.id }),
+    createAffiliation({ affiliateId, referredUserId: newUser.id }),
     upsertSettings(newUser.id, {}),
     upsertNotifications(newUser.id, {}),
   ]);

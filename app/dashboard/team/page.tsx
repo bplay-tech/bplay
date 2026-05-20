@@ -1,5 +1,5 @@
 import { verifyRole } from "@/lib/dal";
-import { getAllUsersWithWallet, getUsersByAffiliatorWithWallet } from "@/db/queries/users";
+import { getAllUsersWithWallet, getUsersByAffiliatorWithWallet, type UserWithTierWalletAndManager } from "@/db/queries/users";
 import { getAllPartnerTiers } from "@/db/queries/partner-tiers";
 import { TeamClient } from "./TeamClient";
 
@@ -12,7 +12,7 @@ export default async function TeamPage() {
       ? getAllUsersWithWallet()
       : getUsersByAffiliatorWithWallet(user.id),
     getAllPartnerTiers(),
-  ]);
+  ]) as [UserWithTierWalletAndManager[], Awaited<ReturnType<typeof getAllPartnerTiers>>];
 
   const subtitle = role === "SUPER_ADMIN"
     ? "All admins and their users"

@@ -15,6 +15,7 @@ import { deleteDirectMessagesByUser } from "./direct-messages";
 
 export type UserWithTier = User & { tier: PartnerTier };
 export type UserWithTierAndWallet = UserWithTier & { walletAddress: string | null };
+export type UserWithTierWalletAndManager = UserWithTierAndWallet & { managerName: string | null };
 
 const userWithTierSelect = {
   id: users.id,
@@ -120,14 +121,27 @@ export const getUsersByAffiliator = async (affiliateId: string): Promise<UserWit
   return result.map((row) => ({ ...row, tier: row.tier }));
 };
 
-export const getAllUsersWithWallet = async (): Promise<UserWithTierAndWallet[]> => {
+const managerNameCol = sql<string | null>`(
+  SELECT u2.name
+  FROM affiliations a
+  INNER JOIN users u2 ON a.affiliate_id = u2.id
+  WHERE a.referred_user_id = users.id
+  LIMIT 1
+)`;
+
+export const getAllUsersWithWallet = async (): Promise<UserWithTierWalletAndManager[]> => {
   const result = await db
-    .select(userWithTierAndWalletSelect)
+    .select({ ...userWithTierAndWalletSelect, managerName: managerNameCol })
     .from(users)
     .innerJoin(partnerTiers, eq(users.partnerTierId, partnerTiers.id))
     .leftJoin(userSettings, eq(userSettings.userId, users.id));
 
-  return result.map((row) => ({ ...row, tier: row.tier, walletAddress: row.walletAddress ?? null }));
+  return result.map((row) => ({
+    ...row,
+    tier: row.tier,
+    walletAddress: row.walletAddress ?? null,
+    managerName: row.managerName ?? null,
+  }));
 };
 
 export const getSuperAdmin = async (): Promise<User | null> => {
@@ -135,7 +149,7 @@ export const getSuperAdmin = async (): Promise<User | null> => {
   return result[0] ?? null;
 };
 
-export const getUsersByAffiliatorWithWallet = async (affiliateId: string): Promise<UserWithTierAndWallet[]> => {
+export const getUsersByAffiliatorWithWallet = async (affiliateId: string): Promise<UserWithTierWalletAndManager[]> => {
   const result = await db
     .select(userWithTierAndWalletSelect)
     .from(users)
@@ -144,5 +158,5 @@ export const getUsersByAffiliatorWithWallet = async (affiliateId: string): Promi
     .leftJoin(userSettings, eq(userSettings.userId, users.id))
     .where(eq(affiliations.affiliateId, affiliateId));
 
-  return result.map((row) => ({ ...row, tier: row.tier, walletAddress: row.walletAddress ?? null }));
+  return result.map((row) => ({ ...row, tier: row.tier, walletAddress: row.walletAddress ?? null, managerName: null }));
 };
