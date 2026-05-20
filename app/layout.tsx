@@ -21,6 +21,15 @@ export const metadata: Metadata = {
   title: "BPLAY Partner Portal",
   description: "Manage your BPLAY partner commissions, referrals, and payouts",
   metadataBase: new URL("https://bplay.tech"),
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico",
+  },
   openGraph: {
     title: "BPLAY Partner Portal",
     description: "Manage your BPLAY partner commissions, referrals, and payouts",
