@@ -11,7 +11,7 @@ import {
   getBplayPurchaseById,
 } from "@/db/queries/bplay-purchases";
 import { getAffiliationByReferredUser } from "@/db/queries/affiliations";
-import { getUserById } from "@/db/queries/users";
+import { getUserById, getSuperAdmin } from "@/db/queries/users";
 import { getPartnerTierById } from "@/db/queries/partner-tiers";
 import { createTransaction } from "@/db/queries/transactions";
 
@@ -73,15 +73,43 @@ async function maybeCreateAffiliateCommission(purchaseId: string): Promise<void>
 
   const commissionRate = parseFloat(tier.commissionRate);
   const usdcAmount = parseFloat(purchase.usdcAmount);
-  const commissionAmount = ((usdcAmount * commissionRate) / 100).toFixed(2);
+  const totalCommission = (usdcAmount * commissionRate) / 100;
 
-  await createTransaction({
-    userId: affiliation.affiliateId,
-    type: "REFERRAL",
-    amount: commissionAmount,
-    buyerWallet: purchase.buyerWallet,
-    txHash: purchase.txHash ?? null,
-    status: "confirmed",
-    notes: `${commissionRate}% commission on $${usdcAmount} purchase`,
-  });
+  if (affiliate.role === "SALES") {
+    const half = (totalCommission / 2).toFixed(2);
+    const baseNote = `${commissionRate}% commission (50% split) on $${usdcAmount} purchase`;
+
+    await createTransaction({
+      userId: affiliation.affiliateId,
+      type: "REFERRAL",
+      amount: half,
+      buyerWallet: purchase.buyerWallet,
+      txHash: purchase.txHash ?? null,
+      status: "confirmed",
+      notes: baseNote,
+    });
+
+    const admin = await getSuperAdmin();
+    if (admin) {
+      await createTransaction({
+        userId: admin.id,
+        type: "REFERRAL",
+        amount: half,
+        buyerWallet: purchase.buyerWallet,
+        txHash: purchase.txHash ?? null,
+        status: "confirmed",
+        notes: `${baseNote} via ${affiliate.name}`,
+      });
+    }
+  } else {
+    await createTransaction({
+      userId: affiliation.affiliateId,
+      type: "REFERRAL",
+      amount: totalCommission.toFixed(2),
+      buyerWallet: purchase.buyerWallet,
+      txHash: purchase.txHash ?? null,
+      status: "confirmed",
+      notes: `${commissionRate}% commission on $${usdcAmount} purchase`,
+    });
+  }
 }

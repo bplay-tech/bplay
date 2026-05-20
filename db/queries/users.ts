@@ -130,6 +130,11 @@ export const getAllUsersWithWallet = async (): Promise<UserWithTierAndWallet[]> 
   return result.map((row) => ({ ...row, tier: row.tier, walletAddress: row.walletAddress ?? null }));
 };
 
+export const getSuperAdmin = async (): Promise<User | null> => {
+  const result = await db.select().from(users).where(eq(users.role, "SUPER_ADMIN")).limit(1);
+  return result[0] ?? null;
+};
+
 export const getUsersByAffiliatorWithWallet = async (affiliateId: string): Promise<UserWithTierAndWallet[]> => {
   const result = await db
     .select(userWithTierAndWalletSelect)
