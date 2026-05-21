@@ -22,7 +22,7 @@ export function TransactionPendingModal({ open, txHash, confirmed, onClose }: Tr
             </div>
             <div className="text-center">
               <p className="text-sm font-medium text-foreground">Payment confirmed on-chain</p>
-              <p className="text-xs text-muted mt-1">Your BPLAY purchase is pending admin approval.</p>
+              <p className="text-xs text-muted mt-1">Your BPLAY tokens will be credited to your account shortly.</p>
             </div>
           </>
         ) : (

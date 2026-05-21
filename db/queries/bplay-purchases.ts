@@ -1,4 +1,4 @@
-import { eq, and, sum, inArray, sql, asc, or } from "drizzle-orm";
+import { eq, and, sum, inArray, sql, asc, desc, or } from "drizzle-orm";
 import { db } from "../client";
 import { bplayPurchases, type BplayPurchase, type NewBplayPurchase } from "../schema/bplay-purchases";
 import { users } from "../schema/users";
@@ -34,6 +34,64 @@ export const getAllPendingPurchases = async (): Promise<BplayPurchaseWithUser[]>
     .where(or(eq(bplayPurchases.status, "pending_payment"), eq(bplayPurchases.status, "payment_confirmed")));
 };
 
+const PURCHASE_FIELDS = {
+  id: bplayPurchases.id,
+  userId: bplayPurchases.userId,
+  usdcAmount: bplayPurchases.usdcAmount,
+  bplayAmount: bplayPurchases.bplayAmount,
+  exchangeRate: bplayPurchases.exchangeRate,
+  buyerWallet: bplayPurchases.buyerWallet,
+  recipientAddress: bplayPurchases.recipientAddress,
+  txHash: bplayPurchases.txHash,
+  status: bplayPurchases.status,
+  approvedBy: bplayPurchases.approvedBy,
+  approvedAt: bplayPurchases.approvedAt,
+  createdAt: bplayPurchases.createdAt,
+  userName: users.name,
+};
+
+export type CompletedPurchaseStatus = "tokens_transferred" | "failed";
+
+export type PaginatedPurchases = {
+  rows: BplayPurchaseWithUser[];
+  total: number;
+};
+
+export const getCompletedPurchases = async (
+  status: CompletedPurchaseStatus,
+  page: number,
+  pageSize = 10
+): Promise<PaginatedPurchases> => {
+  const offset = (page - 1) * pageSize;
+
+  const [rows, countResult] = await Promise.all([
+    db
+      .select(PURCHASE_FIELDS)
+      .from(bplayPurchases)
+      .innerJoin(users, eq(bplayPurchases.userId, users.id))
+      .where(eq(bplayPurchases.status, status))
+      .orderBy(desc(bplayPurchases.createdAt))
+      .limit(pageSize)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bplayPurchases)
+      .where(eq(bplayPurchases.status, status)),
+  ]);
+
+  return { rows, total: countResult[0]?.count ?? 0 };
+};
+
+export const countPurchasesByStatus = async (
+  status: CompletedPurchaseStatus
+): Promise<number> => {
+  const result = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(bplayPurchases)
+    .where(eq(bplayPurchases.status, status));
+  return result[0]?.count ?? 0;
+};
+
 export const createBplayPurchase = async (data: NewBplayPurchase): Promise<BplayPurchase> => {
   const result = await db.insert(bplayPurchases).values(data).returning();
   return result[0];
@@ -60,10 +118,10 @@ export const getPurchaseByTxHash = async (txHash: string): Promise<BplayPurchase
   return result[0] ?? null;
 };
 
-export const approveBplayPurchase = async (id: string, approvedBy: string): Promise<void> => {
+export const approveBplayPurchase = async (id: string, approvedBy: string | null): Promise<void> => {
   await db
     .update(bplayPurchases)
-    .set({ status: "tokens_transferred", approvedBy, approvedAt: new Date() })
+    .set({ status: "tokens_transferred", approvedBy: approvedBy ?? undefined, approvedAt: new Date() })
     .where(eq(bplayPurchases.id, id));
 };
 

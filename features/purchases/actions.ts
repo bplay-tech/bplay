@@ -42,6 +42,11 @@ export async function recordTxHashAction(purchaseId: string, txHash: string): Pr
   const purchase = await getBplayPurchaseById(purchaseId);
   if (!purchase || purchase.userId !== user.id) return; // silently ignore — prevents spoofing
   await updateBplayPurchaseTxHash(purchaseId, txHash);
+  // Purchases auto-approve on payment confirmation — only payouts require admin review
+  await maybeCreateAffiliateCommission(purchaseId);
+  await approveBplayPurchase(purchaseId, null);
+  revalidatePath("/dashboard/overview");
+  revalidatePath("/dashboard/buy");
 }
 
 export async function approvePurchaseAction(purchaseId: string): Promise<void> {
