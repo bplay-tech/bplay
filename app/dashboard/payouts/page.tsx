@@ -1,15 +1,17 @@
 import { verifyRole } from "@/lib/dal";
 import { getAvailableBalance } from "@/db/queries/transactions";
 import { getPayoutRequestsByUser, getAllPayoutRequests, getPendingPayoutByUser } from "@/db/queries/payout-requests";
+import { getSettingsByUser } from "@/db/queries/user-settings";
 import { PayoutsClient } from "./PayoutsClient";
 
 export default async function PayoutsPage() {
   const user = await verifyRole(["SALES", "ADMIN", "SUPER_ADMIN"]);
-  const [balance, history, allRequests, myPending] = await Promise.all([
+  const [balance, history, allRequests, myPending, settings] = await Promise.all([
     getAvailableBalance(user.id),
     getPayoutRequestsByUser(user.id),
     user.role === "SUPER_ADMIN" ? getAllPayoutRequests() : Promise.resolve(undefined),
     getPendingPayoutByUser(user.id),
+    getSettingsByUser(user.id),
   ]);
 
   const pendingAll = allRequests?.filter((r) => r.status === "pending");
@@ -29,6 +31,7 @@ export default async function PayoutsPage() {
         pendingAll={user.role === "SUPER_ADMIN" ? pendingAll : undefined}
         completedAll={user.role === "SUPER_ADMIN" ? completedAll : undefined}
         isSuperAdmin={user.role === "SUPER_ADMIN"}
+        savedWallet={settings?.walletAddress ?? null}
       />
     </div>
   );

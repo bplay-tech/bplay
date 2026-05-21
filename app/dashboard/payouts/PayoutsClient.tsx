@@ -20,10 +20,11 @@ interface PayoutsClientProps {
   pendingAll?: PayoutRequestWithUser[];
   completedAll?: PayoutRequestWithUser[];
   isSuperAdmin: boolean;
+  savedWallet: string | null;
 }
 
 function formatLocalDateTime(d: Date | string): string {
-  return new Date(d).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
+  return new Date(d).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" });
 }
 
 const HISTORY_COLUMNS: Column<PayoutRequest>[] = [
@@ -72,6 +73,7 @@ export function PayoutsClient({
   pendingAll,
   completedAll,
   isSuperAdmin,
+  savedWallet,
 }: PayoutsClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [approving, setApproving] = useState<PayoutRequestWithUser | null>(null);
@@ -107,7 +109,7 @@ export function PayoutsClient({
         </Button>
       </div>
 
-      <RequestPayoutModal open={modalOpen} onOpenChange={setModalOpen} availableBalance={availableBalance} />
+      <RequestPayoutModal open={modalOpen} onOpenChange={setModalOpen} availableBalance={availableBalance} savedWallet={savedWallet} />
       <ApprovePayoutModal request={approving} onOpenChange={(open) => { if (!open) setApproving(null); }} />
 
       {isSuperAdmin && pendingAll && pendingAll.length > 0 && (
