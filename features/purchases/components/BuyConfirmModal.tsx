@@ -14,6 +14,7 @@ interface BuyConfirmModalProps {
   rate: number;
   onConfirm: (amount: number) => void;
   loading: boolean;
+  partnerCommissionRate?: number;
 }
 
 function WalletConnectStep({ amount, bplayAmount }: { amount: number; bplayAmount: string }) {
@@ -39,13 +40,19 @@ function OrderSummaryStep({
   address,
   onConfirm,
   loading,
+  partnerCommissionRate,
 }: {
   amount: number;
   bplayAmount: string;
   address: string;
   onConfirm: () => void;
   loading: boolean;
+  partnerCommissionRate?: number;
 }) {
+  const provisionAmount = partnerCommissionRate != null
+    ? ((amount * partnerCommissionRate) / 100).toFixed(2)
+    : null;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-lg bg-bg border border-card-border p-4 flex flex-col gap-3">
@@ -57,6 +64,12 @@ function OrderSummaryStep({
           <span className="text-muted">You receive</span>
           <span className="font-semibold text-primary">{bplayAmount} BPLAY</span>
         </div>
+        {provisionAmount && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted">Partner provision</span>
+            <span className="font-medium text-amber-400">${provisionAmount} ({partnerCommissionRate}%)</span>
+          </div>
+        )}
         <div className="border-t border-card-border pt-3 flex justify-between text-sm">
           <span className="text-muted">From wallet</span>
           <span className="font-mono text-xs text-foreground">{formatAddress(address)}</span>
@@ -81,6 +94,7 @@ export function BuyConfirmModal({
   rate,
   onConfirm,
   loading,
+  partnerCommissionRate,
 }: BuyConfirmModalProps) {
   const { address, isConnected } = useAccount();
 
@@ -104,6 +118,7 @@ export function BuyConfirmModal({
         address={address!}
         onConfirm={() => onConfirm(amount)}
         loading={loading}
+        partnerCommissionRate={partnerCommissionRate}
       />
     </Modal>
   );

@@ -1,4 +1,4 @@
-import { eq, or, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { db } from "../client";
 import { users, type User, type NewUser } from "../schema/users";
 import { partnerTiers, type PartnerTier } from "../schema/partner-tiers";
@@ -27,6 +27,7 @@ const userWithTierSelect = {
   referralCode: users.referralCode,
   transferAddress: users.transferAddress,
   isActive: users.isActive,
+  cumulatedCommissions: users.cumulatedCommissions,
   createdAt: users.createdAt,
   updatedAt: users.updatedAt,
   tier: partnerTiers,
@@ -147,6 +148,22 @@ export const getAllUsersWithWallet = async (): Promise<UserWithTierWalletAndMana
 export const getSuperAdmin = async (): Promise<User | null> => {
   const result = await db.select().from(users).where(eq(users.role, "SUPER_ADMIN")).limit(1);
   return result[0] ?? null;
+};
+
+export const incrementCumulatedCommissions = async (userId: string, amount: number): Promise<void> => {
+  await db
+    .update(users)
+    .set({ cumulatedCommissions: sql`${users.cumulatedCommissions} + ${amount.toFixed(2)}` })
+    .where(eq(users.id, userId));
+};
+
+export const getActiveUsersByRole = async (
+  role: "USER" | "SALES" | "ADMIN" | "SUPER_ADMIN"
+): Promise<{ id: string; email: string; name: string }[]> => {
+  return db
+    .select({ id: users.id, email: users.email, name: users.name })
+    .from(users)
+    .where(and(eq(users.isActive, true), eq(users.role, role)));
 };
 
 export const getUsersByAffiliatorWithWallet = async (affiliateId: string): Promise<UserWithTierWalletAndManager[]> => {

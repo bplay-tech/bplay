@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sum, count, inArray, sql, SQL } from "drizzle-orm";
+import { eq, and, gte, lte, sum, count, inArray, sql, SQL, desc } from "drizzle-orm";
 import { db } from "../client";
 import { transactions, type Transaction, type TransactionWithBuyerName, type NewTransaction } from "../schema/transactions";
 import { affiliations } from "../schema/affiliations";
@@ -83,6 +83,62 @@ export const getTeamTransactions = async (
 
   const conditions = [inArray(transactions.userId, referredIds), ...buildWhereConditions(filters)];
   return db.select(txCols).from(transactions).where(and(...conditions));
+};
+
+export type PaginatedResult<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+const DEFAULT_PAGE_SIZE = 20;
+
+export const getPaginatedTransactionsByUser = async (
+  userId: string,
+  filters?: TransactionFilters,
+  page = 1,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PaginatedResult<TransactionWithBuyerName>> => {
+  const clampedPage = Math.max(1, page);
+  const clampedSize = Math.min(100, Math.max(1, pageSize));
+  const offset = (clampedPage - 1) * clampedSize;
+  const conditions = [eq(transactions.userId, userId), ...buildWhereConditions(filters)];
+  const whereClause = and(...conditions);
+
+  const [data, totalRows] = await Promise.all([
+    db.select(txCols).from(transactions)
+      .where(whereClause)
+      .orderBy(desc(transactions.createdAt))
+      .limit(clampedSize)
+      .offset(offset),
+    db.select({ value: count() }).from(transactions).where(whereClause),
+  ]);
+
+  return { data, total: Number(totalRows[0]?.value ?? 0), page: clampedPage, pageSize: clampedSize };
+};
+
+export const getPaginatedAllTransactions = async (
+  filters?: TransactionFilters,
+  page = 1,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PaginatedResult<TransactionWithBuyerName>> => {
+  const clampedPage = Math.max(1, page);
+  const clampedSize = Math.min(100, Math.max(1, pageSize));
+  const offset = (clampedPage - 1) * clampedSize;
+  const conditions = buildWhereConditions(filters);
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [data, totalRows] = await Promise.all([
+    db.select(txCols).from(transactions)
+      .where(whereClause)
+      .orderBy(desc(transactions.createdAt))
+      .limit(clampedSize)
+      .offset(offset),
+    db.select({ value: count() }).from(transactions).where(whereClause),
+  ]);
+
+  return { data, total: Number(totalRows[0]?.value ?? 0), page: clampedPage, pageSize: clampedSize };
 };
 
 export const createTransaction = async (data: NewTransaction): Promise<Transaction> => {

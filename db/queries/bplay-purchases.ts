@@ -216,6 +216,23 @@ export const getTeamTokensSold = async (
   };
 };
 
+export const getAffiliateTurnoverUsd = async (affiliateId: string): Promise<number> => {
+  const referred = await db
+    .select({ referredUserId: affiliations.referredUserId })
+    .from(affiliations)
+    .where(eq(affiliations.affiliateId, affiliateId));
+
+  if (referred.length === 0) return 0;
+
+  const ids = referred.map((r) => r.referredUserId);
+  const result = await db
+    .select({ totalUsdc: sum(bplayPurchases.usdcAmount) })
+    .from(bplayPurchases)
+    .where(and(inArray(bplayPurchases.userId, ids), eq(bplayPurchases.status, "tokens_transferred")));
+
+  return parseFloat(result[0]?.totalUsdc ?? "0");
+};
+
 export type TokenDataPoint = { date: string; bplay: number; cumulative: number };
 
 export const getTokenPurchaseHistory = async (userId: string): Promise<TokenDataPoint[]> => {

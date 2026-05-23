@@ -10,10 +10,7 @@ import {
   rejectBplayPurchase,
   getBplayPurchaseById,
 } from "@/db/queries/bplay-purchases";
-import { getAffiliationByReferredUser } from "@/db/queries/affiliations";
-import { getUserById, getSuperAdmin } from "@/db/queries/users";
-import { getPartnerTierById } from "@/db/queries/partner-tiers";
-import { createTransaction } from "@/db/queries/transactions";
+import { processAffiliateCommission } from "@/lib/commission";
 
 export async function createBplayPurchaseAction(
   usdcAmount: number,
@@ -40,10 +37,9 @@ export async function createBplayPurchaseAction(
 export async function recordTxHashAction(purchaseId: string, txHash: string): Promise<void> {
   const user = await verifySession();
   const purchase = await getBplayPurchaseById(purchaseId);
-  if (!purchase || purchase.userId !== user.id) return; // silently ignore — prevents spoofing
+  if (!purchase || purchase.userId !== user.id) return;
   await updateBplayPurchaseTxHash(purchaseId, txHash);
-  // Purchases auto-approve on payment confirmation — only payouts require admin review
-  await maybeCreateAffiliateCommission(purchaseId);
+  await processAffiliateCommission(purchaseId);
   await approveBplayPurchase(purchaseId, null);
   revalidatePath("/dashboard/overview");
   revalidatePath("/dashboard/buy");
@@ -51,8 +47,7 @@ export async function recordTxHashAction(purchaseId: string, txHash: string): Pr
 
 export async function approvePurchaseAction(purchaseId: string): Promise<void> {
   const admin = await verifyRole(["SUPER_ADMIN"]);
-  // Create commission first — if it throws, purchase stays unapproved (consistent state)
-  await maybeCreateAffiliateCommission(purchaseId);
+  await processAffiliateCommission(purchaseId);
   await approveBplayPurchase(purchaseId, admin.id);
   revalidatePath("/dashboard/purchases");
 }
@@ -61,60 +56,4 @@ export async function rejectPurchaseAction(purchaseId: string): Promise<void> {
   await verifyRole(["SUPER_ADMIN"]);
   await rejectBplayPurchase(purchaseId);
   revalidatePath("/dashboard/purchases");
-}
-
-async function maybeCreateAffiliateCommission(purchaseId: string): Promise<void> {
-  const purchase = await getBplayPurchaseById(purchaseId);
-  if (!purchase) return;
-
-  const affiliation = await getAffiliationByReferredUser(purchase.userId);
-  if (!affiliation) return;
-
-  const affiliate = await getUserById(affiliation.affiliateId);
-  if (!affiliate) return;
-
-  const tier = await getPartnerTierById(affiliate.partnerTierId);
-  if (!tier) return;
-
-  const commissionRate = parseFloat(tier.commissionRate);
-  const usdcAmount = parseFloat(purchase.usdcAmount);
-  const totalCommission = (usdcAmount * commissionRate) / 100;
-
-  if (affiliate.role === "SALES") {
-    const half = (totalCommission / 2).toFixed(2);
-    const baseNote = `${commissionRate}% commission (50% split) on $${usdcAmount} purchase`;
-
-    await createTransaction({
-      userId: affiliation.affiliateId,
-      type: "REFERRAL",
-      amount: half,
-      buyerWallet: purchase.buyerWallet,
-      txHash: purchase.txHash ?? null,
-      status: "confirmed",
-      notes: baseNote,
-    });
-
-    const admin = await getSuperAdmin();
-    if (admin) {
-      await createTransaction({
-        userId: admin.id,
-        type: "REFERRAL",
-        amount: half,
-        buyerWallet: purchase.buyerWallet,
-        txHash: purchase.txHash ?? null,
-        status: "confirmed",
-        notes: `${baseNote} via ${affiliate.name}`,
-      });
-    }
-  } else {
-    await createTransaction({
-      userId: affiliation.affiliateId,
-      type: "REFERRAL",
-      amount: totalCommission.toFixed(2),
-      buyerWallet: purchase.buyerWallet,
-      txHash: purchase.txHash ?? null,
-      status: "confirmed",
-      notes: `${commissionRate}% commission on $${usdcAmount} purchase`,
-    });
-  }
 }

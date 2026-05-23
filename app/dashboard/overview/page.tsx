@@ -12,12 +12,14 @@ import {
   Copy,
   Newspaper,
   ShoppingCart,
+  TrendingUp,
 } from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import { getDashboardStats, getTransactionsByUser } from "@/db/queries/transactions";
-import { getBplayBalance, getTeamTokensSold, getTokenPurchaseHistory } from "@/db/queries/bplay-purchases";
+import { getBplayBalance, getTeamTokensSold, getTokenPurchaseHistory, getAffiliateTurnoverUsd } from "@/db/queries/bplay-purchases";
 import { countReferrals } from "@/db/queries/affiliations";
-import { getPartnerTierByName } from "@/db/queries/partner-tiers";
+import { getAllPartnerTiers, getPartnerTierByName } from "@/db/queries/partner-tiers";
+import { getUserById } from "@/db/queries/users";
 import { getCurrentExchangeRate } from "@/db/queries/exchange-rates";
 import { getRecentSystemMessages } from "@/db/queries/system-messages";
 import { buildReferralUrl } from "@/lib/referral";
@@ -131,13 +133,16 @@ export default async function OverviewPage() {
     );
   }
 
-  // ADMIN / SUPER_ADMIN view
-  const [stats, referralCount, tier, recentTxns, teamSales] = await Promise.all([
+  // ADMIN / SALES / SUPER_ADMIN view
+  const [stats, referralCount, tier, recentTxns, teamSales, allTiers, totalTurnover, freshUser] = await Promise.all([
     getDashboardStats(user.id),
     countReferrals(user.id),
     getPartnerTierByName(user.tierName),
     getTransactionsByUser(user.id),
     getTeamTokensSold(user.id),
+    getAllPartnerTiers(),
+    getAffiliateTurnoverUsd(user.id),
+    getUserById(user.id),
   ]);
 
   const recent = recentTxns.slice(-5).reverse();
@@ -147,6 +152,7 @@ export default async function OverviewPage() {
   const referralUrl = buildReferralUrl(user.referralCode, process.env.NEXTAUTH_URL ?? "http://localhost:3000");
   const commissionRate = parseFloat(tier?.commissionRate ?? "0");
   const tierDisplay = TIER_DISPLAY[user.tierName as TierName];
+  const cumulatedCommissions = parseFloat(freshUser?.cumulatedCommissions ?? "0");
 
   return (
     <div className="flex flex-col gap-6">
@@ -155,6 +161,13 @@ export default async function OverviewPage() {
         role={user.role}
         tierName={user.tierName}
         commissionRate={commissionRate}
+        totalTurnover={totalTurnover}
+        allTiers={allTiers.map((t) => ({
+          name: t.name,
+          minTurnoverUsd: t.minTurnoverUsd,
+          commissionRate: t.commissionRate,
+          color: t.color,
+        }))}
       />
       <CryptoTicker bplayRatePerUsdc={currentRate} />
 
@@ -238,6 +251,19 @@ export default async function OverviewPage() {
           <div>
             <p className="text-2xl font-bold text-white">{formatUsd(teamSales.totalUsdc)}</p>
             <p className="text-xs text-white/40 mt-1">From team purchases</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-start justify-between">
+            <p className="text-xs text-white/40 font-medium tracking-wide">Cumulated Commissions</p>
+            <div className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: "rgba(124,92,255,0.2)" }}>
+              <TrendingUp className="h-4 w-4 text-purple-400" />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">{formatUsd(cumulatedCommissions)}</p>
+            <p className="text-xs text-purple-400 mt-1">All-time provisions earned</p>
           </div>
         </div>
       </div>

@@ -9,9 +9,17 @@ import { Paperclip, X, Loader2 } from "lucide-react";
 
 const MAX_BODY = 5000;
 
+const TARGET_GROUPS = [
+  { value: "ALL",   label: "All users",  description: "Admins, Sales and Users" },
+  { value: "ADMIN", label: "Admins only", description: "Admin accounts" },
+  { value: "SALES", label: "Sales only",  description: "Sales accounts" },
+  { value: "USER",  label: "Users only",  description: "Regular buyers" },
+] as const;
+
 export function ComposeClient() {
   const [state, action, pending] = useActionState(sendBroadcastMessageAction, null);
   const [bodyLen, setBodyLen] = useState(0);
+  const [targetGroup, setTargetGroup] = useState<"ALL" | "ADMIN" | "SALES" | "USER">("ALL");
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [attachmentName, setAttachmentName] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -60,6 +68,30 @@ export function ComposeClient() {
     <Card>
       <form action={action} className="flex flex-col gap-5">
         <Input name="title" label="Title" placeholder="Announcement title…" maxLength={200} required />
+
+        {/* Target group */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-foreground">Send to</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {TARGET_GROUPS.map((g) => (
+              <button
+                key={g.value}
+                type="button"
+                onClick={() => setTargetGroup(g.value)}
+                className="flex flex-col items-start px-3 py-2.5 rounded-xl text-left transition-all"
+                style={
+                  targetGroup === g.value
+                    ? { background: "rgba(124,92,255,0.2)", border: "1px solid rgba(124,92,255,0.5)" }
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)" }
+                }
+              >
+                <span className="text-xs font-semibold text-white">{g.label}</span>
+                <span className="text-[10px] text-white/40 mt-0.5">{g.description}</span>
+              </button>
+            ))}
+          </div>
+          <input type="hidden" name="targetGroup" value={targetGroup} />
+        </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-foreground">Message</label>
@@ -128,7 +160,7 @@ export function ComposeClient() {
         )}
 
         <Button type="submit" loading={pending} disabled={uploading} className="self-start">
-          Send to All Users
+          {targetGroup === "ALL" ? "Send to All Users" : `Send to ${TARGET_GROUPS.find((g) => g.value === targetGroup)?.label}`}
         </Button>
       </form>
     </Card>

@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { createHmac } from "crypto";
-import { getPurchaseByTxHash, autoApprovePurchase } from "@/db/queries/bplay-purchases";
+import { getPurchaseByTxHash, approveBplayPurchase, updateBplayPurchaseTxHash } from "@/db/queries/bplay-purchases";
+import { processAffiliateCommission } from "@/lib/commission";
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
   const expected = createHmac("sha256", secret).update(body).digest("hex");
@@ -32,7 +33,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (existing.status === "pending_payment") {
-    await autoApprovePurchase(txHash);
+    await updateBplayPurchaseTxHash(existing.id, txHash);
+    await processAffiliateCommission(existing.id);
+    await approveBplayPurchase(existing.id, null);
   }
 
   return Response.json({ ok: true });

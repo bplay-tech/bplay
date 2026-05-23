@@ -1,14 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Zap } from "lucide-react";
-import { TIER_DISPLAY, type TierName } from "@/lib/tiers";
+import { TierProgressBar } from "./TierProgressBar";
+
+interface Tier {
+  name: string;
+  minTurnoverUsd: number;
+  commissionRate: string;
+  color: string;
+}
 
 interface WelcomeBannerProps {
   firstName: string;
   role: string;
   tierName?: string;
   commissionRate?: number;
+  totalTurnover?: number;
+  allTiers?: Tier[];
 }
 
 const USER_PHRASES = (name: string) => [
@@ -23,12 +31,19 @@ const ADMIN_PHRASES = (name: string) => [
   `Let's grow, ${name}!`,
 ];
 
-export function WelcomeBanner({ firstName, role, tierName, commissionRate }: WelcomeBannerProps) {
+export function WelcomeBanner({
+  firstName,
+  role,
+  tierName,
+  commissionRate,
+  totalTurnover = 0,
+  allTiers = [],
+}: WelcomeBannerProps) {
   const isUser = role === "USER";
   const phrases = isUser ? USER_PHRASES(firstName) : ADMIN_PHRASES(firstName);
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
-  const tierDisplay = tierName && role !== "USER" ? TIER_DISPLAY[tierName as TierName] : null;
+  const showProgressBar = !isUser && tierName && allTiers.length > 0;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -53,8 +68,10 @@ export function WelcomeBanner({ firstName, role, tierName, commissionRate }: Wel
         className="absolute top-0 right-0 w-80 h-full pointer-events-none"
         style={{ background: "radial-gradient(ellipse at top right, rgba(0,180,150,0.18) 0%, transparent 70%)" }}
       />
-      <div className="relative flex flex-wrap items-center justify-between gap-3">
-        <div>
+
+      <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        {/* Left half: greeting */}
+        <div className={showProgressBar ? "flex-1 min-w-0" : "w-full"}>
           <h1
             className="text-xl sm:text-2xl font-bold text-white transition-all duration-400"
             style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(-6px)" }}
@@ -74,17 +91,15 @@ export function WelcomeBanner({ firstName, role, tierName, commissionRate }: Wel
             <p className="text-white/60 mt-1 text-sm">Your BPLAY token dashboard</p>
           )}
         </div>
-        {tierDisplay && (
-          <div
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold shrink-0"
-            style={{
-              border: "1px solid rgba(167,139,250,0.5)",
-              background: "rgba(124,92,255,0.15)",
-              color: "#c4b5fd",
-            }}
-          >
-            <Zap className="h-4 w-4" />
-            {tierDisplay.label}
+
+        {/* Right half: battery progress bar */}
+        {showProgressBar && (
+          <div className="w-full sm:w-64 shrink-0">
+            <TierProgressBar
+              currentTurnover={totalTurnover}
+              currentTierName={tierName!}
+              tiers={allTiers}
+            />
           </div>
         )}
       </div>

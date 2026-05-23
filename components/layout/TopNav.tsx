@@ -90,7 +90,13 @@ export function TopNav({ name, role, tierName, notificationBell }: TopNavProps) 
                 </div>
                 <div className="hidden sm:flex flex-col items-start">
                   <span className="text-sm font-semibold text-white leading-none">{name}</span>
-                  <span className="text-xs text-white/40 mt-0.5">{roleLabel}</span>
+                  {tierDisplay ? (
+                    <span className="text-xs mt-0.5 font-medium" style={{ color: tierDisplay.hex }}>
+                      {roleLabel} – {tierName}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-white/40 mt-0.5">{roleLabel}</span>
+                  )}
                 </div>
                 <ChevronDown className="h-4 w-4 text-white/30" />
               </button>

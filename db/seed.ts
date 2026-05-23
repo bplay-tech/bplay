@@ -24,36 +24,43 @@ async function seedPartnerTiers() {
       {
         name: "Bronze",
         commissionRate: "9.00",
-        minSalesThreshold: 0,
+        minTurnoverUsd: 0,
         color: "#CD7F32",
       },
       {
         name: "Silver",
         commissionRate: "11.00",
-        minSalesThreshold: 10,
+        minTurnoverUsd: 50000,
         color: "#9CA3AF",
       },
       {
         name: "Gold",
         commissionRate: "13.50",
-        minSalesThreshold: 25,
+        minTurnoverUsd: 120000,
         color: "#D4AF37",
       },
       {
         name: "Platinum",
         commissionRate: "17.00",
-        minSalesThreshold: 50,
+        minTurnoverUsd: 300000,
         color: "#67E8F9",
+      },
+      {
+        name: "Diamond",
+        commissionRate: "20.00",
+        minTurnoverUsd: 600000,
+        color: "#B9F2FF",
       },
     ])
     .onConflictDoUpdate({
       target: partnerTiers.name,
       set: {
         commissionRate: sql`excluded.commission_rate`,
+        minTurnoverUsd: sql`excluded.min_turnover_usd`,
         color: sql`excluded.color`,
       },
     });
-  console.log("  4 partner tiers upserted");
+  console.log("  5 partner tiers upserted");
 }
 
 async function seedExchangeRate() {
@@ -73,10 +80,10 @@ async function seedSuperAdmin() {
   const platinumTier = await db
     .select()
     .from(partnerTiers)
-    .where(eq(partnerTiers.name, "Platinum"))
+    .where(eq(partnerTiers.name, "Diamond"))
     .limit(1);
   if (!platinumTier[0])
-    throw new Error("Gold tier not found — ensure tiers are seeded first");
+    throw new Error("Diamond tier not found — ensure tiers are seeded first");
 
   const passwordHash = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 12);
   const existing = await db

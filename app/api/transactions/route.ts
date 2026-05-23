@@ -1,9 +1,8 @@
 import { type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import {
-  getTransactionsByUser,
-  getTeamTransactions,
-  getAllTransactions,
+  getPaginatedTransactionsByUser,
+  getPaginatedAllTransactions,
   type TransactionFilters,
 } from "@/db/queries/transactions";
 
@@ -21,17 +20,17 @@ export async function GET(request: NextRequest) {
       type: (searchParams.get("type") as TransactionFilters["type"]) ?? undefined,
       status: (searchParams.get("status") as TransactionFilters["status"]) ?? undefined,
     };
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "20")));
 
     const { role, id: userId } = session.user;
 
-    const transactions =
+    const result =
       role === "SUPER_ADMIN"
-        ? await getAllTransactions(filters)
-        : role === "ADMIN" || role === "SALES"
-        ? await getTeamTransactions(userId, filters)
-        : await getTransactionsByUser(userId, filters);
+        ? await getPaginatedAllTransactions(filters, page, pageSize)
+        : await getPaginatedTransactionsByUser(userId, filters, page, pageSize);
 
-    return Response.json(transactions);
+    return Response.json(result);
   } catch {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }

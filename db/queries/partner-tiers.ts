@@ -3,7 +3,7 @@ import { db } from "../client";
 import { partnerTiers, type NewPartnerTier, type PartnerTier } from "../schema";
 
 export const getAllPartnerTiers = async (): Promise<PartnerTier[]> => {
-  return db.select().from(partnerTiers).orderBy(partnerTiers.minSalesThreshold);
+  return db.select().from(partnerTiers).orderBy(partnerTiers.minTurnoverUsd);
 };
 
 export const getPartnerTierById = async (id: string): Promise<PartnerTier | null> => {

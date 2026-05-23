@@ -1,33 +1,45 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../client";
 import { payoutRequests, type PayoutRequest, type NewPayoutRequest } from "../schema/payout-requests";
 import { transactions } from "../schema/transactions";
 import { users } from "../schema/users";
 
-export type PayoutRequestWithUser = PayoutRequest & { userName: string };
+export type PayoutRequestEnriched = PayoutRequest & { reviewerName: string | null };
+export type PayoutRequestWithUser = PayoutRequest & { userName: string; reviewerName: string | null };
 
-export const getPayoutRequestsByUser = async (userId: string): Promise<PayoutRequest[]> => {
-  return db.select().from(payoutRequests).where(eq(payoutRequests.userId, userId));
+const PAYOUT_COLS = {
+  id: payoutRequests.id,
+  userId: payoutRequests.userId,
+  amount: payoutRequests.amount,
+  walletAddress: payoutRequests.walletAddress,
+  payoutMethod: payoutRequests.payoutMethod,
+  status: payoutRequests.status,
+  reviewedBy: payoutRequests.reviewedBy,
+  reviewedAt: payoutRequests.reviewedAt,
+  txHash: payoutRequests.txHash,
+  notes: payoutRequests.notes,
+  createdAt: payoutRequests.createdAt,
+};
+
+export const getPayoutRequestsByUser = async (userId: string): Promise<PayoutRequestEnriched[]> => {
+  const reviewer = alias(users, "reviewer");
+  return db
+    .select({ ...PAYOUT_COLS, reviewerName: reviewer.name })
+    .from(payoutRequests)
+    .leftJoin(reviewer, eq(payoutRequests.reviewedBy, reviewer.id))
+    .where(eq(payoutRequests.userId, userId))
+    .orderBy(desc(payoutRequests.createdAt));
 };
 
 export const getAllPayoutRequests = async (): Promise<PayoutRequestWithUser[]> => {
+  const reviewer = alias(users, "reviewer");
   return db
-    .select({
-      id: payoutRequests.id,
-      userId: payoutRequests.userId,
-      amount: payoutRequests.amount,
-      walletAddress: payoutRequests.walletAddress,
-      payoutMethod: payoutRequests.payoutMethod,
-      status: payoutRequests.status,
-      reviewedBy: payoutRequests.reviewedBy,
-      reviewedAt: payoutRequests.reviewedAt,
-      txHash: payoutRequests.txHash,
-      notes: payoutRequests.notes,
-      createdAt: payoutRequests.createdAt,
-      userName: users.name,
-    })
+    .select({ ...PAYOUT_COLS, userName: users.name, reviewerName: reviewer.name })
     .from(payoutRequests)
-    .innerJoin(users, eq(payoutRequests.userId, users.id));
+    .innerJoin(users, eq(payoutRequests.userId, users.id))
+    .leftJoin(reviewer, eq(payoutRequests.reviewedBy, reviewer.id))
+    .orderBy(desc(payoutRequests.createdAt));
 };
 
 export const getPendingPayoutByUser = async (userId: string): Promise<PayoutRequest | null> => {

@@ -28,9 +28,10 @@ interface BuyBplaySectionProps {
   rate: number;
   recipientAddress: string;
   usdcContractAddress: string;
+  partnerCommissionRate?: number;
 }
 
-export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress }: BuyBplaySectionProps) {
+export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress, partnerCommissionRate }: BuyBplaySectionProps) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
@@ -200,6 +201,11 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress }:
                 <p className="text-xs text-muted">
                   You will receive approximately{" "}
                   <span className="text-primary font-semibold">{formatBplay(usdcToBplay(customUsdcAmount, rate))}</span>
+                  {partnerCommissionRate != null && (
+                    <span className="ml-2 text-amber-400">
+                      · Partner provision: ${((customUsdcAmount * partnerCommissionRate) / 100).toFixed(2)} ({partnerCommissionRate}%)
+                    </span>
+                  )}
                 </p>
               )}
             </div>
@@ -260,6 +266,7 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress }:
         rate={rate}
         onConfirm={handleConfirm}
         loading={confirming}
+        partnerCommissionRate={partnerCommissionRate}
       />
       <TransactionPendingModal open={pending} txHash={txHash} confirmed={isTxConfirmed} onClose={handleClose} />
     </div>
