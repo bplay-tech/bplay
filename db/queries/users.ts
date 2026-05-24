@@ -104,9 +104,9 @@ export const getAllUsers = async (): Promise<UserWithTier[]> => {
   return result.map((row) => ({ ...row, tier: row.tier }));
 };
 
-export const getActiveUserRecipients = async (): Promise<{ id: string; email: string; name: string }[]> => {
+export const getActiveUserRecipients = async (): Promise<{ id: string; email: string; name: string; role: string }[]> => {
   return db
-    .select({ id: users.id, email: users.email, name: users.name })
+    .select({ id: users.id, email: users.email, name: users.name, role: users.role })
     .from(users)
     .where(eq(users.isActive, true));
 };

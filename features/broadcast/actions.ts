@@ -31,7 +31,6 @@ export async function sendBroadcastMessageAction(
   formData: FormData
 ): Promise<{ error: string } | { success: true }> {
   const actor = await verifyRole(["SUPER_ADMIN"]);
-
   const parsed = broadcastSchema.safeParse({
     title: formData.get("title"),
     body: formData.get("body"),

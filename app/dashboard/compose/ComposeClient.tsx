@@ -10,10 +10,10 @@ import { Paperclip, X, Loader2 } from "lucide-react";
 const MAX_BODY = 5000;
 
 const TARGET_GROUPS = [
-  { value: "ALL",   label: "All users",  description: "Admins, Sales and Users" },
-  { value: "ADMIN", label: "Admins only", description: "Admin accounts" },
-  { value: "SALES", label: "Sales only",  description: "Sales accounts" },
-  { value: "USER",  label: "Users only",  description: "Regular buyers" },
+  { value: "ALL",   label: "Everyone",  description: "All admins, sales and users" },
+  { value: "ADMIN", label: "All Admins", description: "Admin accounts only" },
+  { value: "SALES", label: "All Sales",  description: "Sales accounts only" },
+  { value: "USER",  label: "All Users",  description: "Regular buyer accounts" },
 ] as const;
 
 export function ComposeClient() {
@@ -160,7 +160,7 @@ export function ComposeClient() {
         )}
 
         <Button type="submit" loading={pending} disabled={uploading} className="self-start">
-          {targetGroup === "ALL" ? "Send to All Users" : `Send to ${TARGET_GROUPS.find((g) => g.value === targetGroup)?.label}`}
+          Send to {TARGET_GROUPS.find((g) => g.value === targetGroup)?.label ?? "Everyone"}
         </Button>
       </form>
     </Card>

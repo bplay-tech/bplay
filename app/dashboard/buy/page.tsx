@@ -19,7 +19,7 @@ export default async function BuyPage() {
   const transferAddress = user?.transferAddress ?? null;
   const recipientAddress = transferAddress ?? treasuryAddress;
 
-  const affiliation = await getAffiliationByReferredUser(session.id);
+  const affiliation = session.role !== "USER" ? await getAffiliationByReferredUser(session.id) : null;
   let partnerCommissionRate: number | undefined;
   if (affiliation) {
     const affiliate = await getUserById(affiliation.affiliateId);

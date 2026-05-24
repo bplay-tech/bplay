@@ -1,27 +1,206 @@
 "use client";
 
-import { useActionState, useState, useRef } from "react";
+import { useActionState, useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { sendDirectMessageAction } from "@/features/messaging/actions";
-import { Paperclip, X, Loader2 } from "lucide-react";
+import { Paperclip, X, Loader2, Search, ChevronLeft, ChevronRight, User } from "lucide-react";
 
 interface Recipient {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
+
+const ROLE_LABEL: Record<string, { label: string; color: string }> = {
+  SUPER_ADMIN: { label: "Super Admin", color: "text-red-400" },
+  ADMIN:       { label: "Admin",       color: "text-amber-400" },
+  SALES:       { label: "Sales",       color: "text-blue-400" },
+  USER:        { label: "User",        color: "text-white/40" },
+};
 
 interface Props {
   recipients: Recipient[];
 }
 
 const MAX_BODY = 5000;
+const PAGE_SIZE = 8;
+
+function RecipientPicker({
+  recipients,
+  selected,
+  onSelect,
+}: {
+  recipients: Recipient[];
+  selected: Recipient | null;
+  onSelect: (r: Recipient | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = recipients.filter(
+    (r) =>
+      r.name.toLowerCase().includes(query.toLowerCase()) ||
+      r.email.toLowerCase().includes(query.toLowerCase())
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const slice = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [query]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSelect = (r: Recipient) => {
+    onSelect(r);
+    setOpen(false);
+    setQuery("");
+    setPage(1);
+  };
+
+  return (
+    <div className="flex flex-col gap-1" ref={containerRef}>
+      <label className="text-sm font-medium text-foreground">To</label>
+
+      {selected ? (
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-xl"
+          style={{ background: "rgba(124,92,255,0.1)", border: "1px solid rgba(124,92,255,0.4)" }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(124,92,255,0.2)" }}>
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-foreground">{selected.name}</p>
+                <span className={`text-[10px] font-semibold ${(ROLE_LABEL[selected.role] ?? { color: "text-white/40" }).color}`}>
+                  {(ROLE_LABEL[selected.role] ?? { label: selected.role }).label}
+                </span>
+              </div>
+              <p className="text-xs text-muted">{selected.email}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSelect(null)}
+            className="text-white/40 hover:text-white/70 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full text-left rounded-xl px-4 py-3 text-sm bg-card border border-card-border text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors hover:border-white/20"
+        >
+          Click to select recipient…
+        </button>
+      )}
+
+      {open && (
+        <div
+          className="flex flex-col gap-2 rounded-xl p-3 mt-1"
+          style={{ background: "rgba(20,20,35,0.98)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+        >
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <input
+              autoFocus
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name or email…"
+              className="w-full pl-9 pr-4 py-2 text-sm rounded-lg bg-white/5 border border-white/10 text-foreground placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-primary/50"
+            />
+          </div>
+
+          {/* Count */}
+          <p className="text-xs text-white/30 px-1">
+            {filtered.length} recipient{filtered.length !== 1 ? "s" : ""}
+            {query && ` matching "${query}"`}
+          </p>
+
+          {/* List */}
+          <div className="flex flex-col gap-0.5">
+            {slice.length === 0 ? (
+              <p className="text-sm text-white/40 text-center py-4">No recipients found.</p>
+            ) : (
+              slice.map((r) => {
+                const roleInfo = ROLE_LABEL[r.role] ?? { label: r.role, color: "text-white/40" };
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => handleSelect(r)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors hover:bg-white/5"
+                  >
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(124,92,255,0.15)" }}>
+                      <span className="text-xs font-semibold text-primary/80">
+                        {r.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground truncate">{r.name}</p>
+                      <p className="text-xs text-white/40 truncate">{r.email}</p>
+                    </div>
+                    <span className={`text-[10px] font-semibold shrink-0 ${roleInfo.color}`}>
+                      {roleInfo.label}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-1 border-t border-white/8">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="p-1.5 rounded-lg text-white/40 hover:text-white/70 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-xs text-white/40">
+                {safePage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="p-1.5 rounded-lg text-white/40 hover:text-white/70 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ComposeMessageClient({ recipients }: Props) {
   const [state, action, pending] = useActionState(sendDirectMessageAction, null);
   const [bodyLen, setBodyLen] = useState(0);
+  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [attachmentName, setAttachmentName] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -69,22 +248,12 @@ export function ComposeMessageClient({ recipients }: Props) {
   return (
     <Card>
       <form action={action} className="flex flex-col gap-5">
-        {/* Recipient */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-foreground">To</label>
-          <select
-            name="toUserId"
-            required
-            className="w-full rounded-xl px-4 py-3 text-sm bg-card border border-card-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="">Select recipient…</option>
-            {recipients.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name} ({r.email})
-              </option>
-            ))}
-          </select>
-        </div>
+        <RecipientPicker
+          recipients={recipients}
+          selected={selectedRecipient}
+          onSelect={setSelectedRecipient}
+        />
+        <input type="hidden" name="toUserId" value={selectedRecipient?.id ?? ""} />
 
         <Input name="subject" label="Subject" placeholder="Message subject…" maxLength={200} required />
 
@@ -152,7 +321,12 @@ export function ComposeMessageClient({ recipients }: Props) {
           <p className="text-sm text-success">Message sent successfully.</p>
         )}
 
-        <Button type="submit" loading={pending} disabled={uploading} className="self-start">
+        <Button
+          type="submit"
+          loading={pending}
+          disabled={uploading || !selectedRecipient}
+          className="self-start"
+        >
           Send Message
         </Button>
       </form>
