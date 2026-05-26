@@ -76,7 +76,10 @@ function parseDiffNote(notes: string) {
   const salesTier = notes.match(/− (\w+) ([\d.]+)%\)/)?.[1];
   const salesRate = notes.match(/− (\w+) ([\d.]+)%\)/)?.[2];
   const amount = notes.match(/on \$([\d.]+) purchase/)?.[1];
-  return { diffRate, adminTier, adminRate, salesTier, salesRate, amount };
+  const viaRaw = notes.match(/purchase via (.+)$/)?.[1] ?? null;
+  const adminName = viaRaw?.match(/· admin: (.+)$/)?.[1] ?? null;
+  const viaName = viaRaw?.replace(/· admin: .+$/, "").trim() ?? null;
+  return { diffRate, adminTier, adminRate, salesTier, salesRate, amount, viaName, adminName };
 }
 
 /* ------------------------------------------------------------------ */
@@ -90,7 +93,7 @@ function CommissionNotes({ notes, type }: { notes: string | null; type: string }
   const isRegular = notes.includes("commission on") && !isDiff;
 
   if (isDiff) {
-    const { diffRate, adminTier, adminRate, salesTier, salesRate, amount } = parseDiffNote(notes);
+    const { diffRate, adminTier, adminRate, salesTier, salesRate, amount, viaName, adminName } = parseDiffNote(notes);
     return (
       <div
         className="mt-2 flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
@@ -124,6 +127,20 @@ function CommissionNotes({ notes, type }: { notes: string | null; type: string }
             </span>
             {amount && <span className="text-[11px] text-white/25">on ${amount} purchase</span>}
           </div>
+          {(viaName || adminName) && (
+            <div className="flex items-center gap-3 flex-wrap">
+              {viaName && (
+                <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  via <span style={{ color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>{viaName}</span>
+                </span>
+              )}
+              {adminName && (
+                <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  admin <span style={{ color: "#c4b5fd", fontWeight: 500 }}>{adminName}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );

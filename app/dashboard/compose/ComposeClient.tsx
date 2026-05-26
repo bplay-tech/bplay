@@ -1,11 +1,14 @@
 "use client";
 
-import { useActionState, useState, useRef } from "react";
+import { useActionState, useState, useRef, useTransition } from "react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { sendBroadcastMessageAction } from "@/features/broadcast/actions";
-import { Paperclip, X, Loader2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { sendBroadcastMessageAction, deleteAnnouncementAction } from "@/features/broadcast/actions";
+import { Paperclip, X, Loader2, Trash2, Megaphone } from "lucide-react";
+import type { SystemMessageWithAuthor } from "@/db/queries/system-messages";
 
 const MAX_BODY = 5000;
 
@@ -16,10 +19,13 @@ const TARGET_GROUPS = [
   { value: "USER",  label: "All Users",  description: "Regular buyer accounts" },
 ] as const;
 
-export function ComposeClient() {
+export function ComposeClient({ announcements }: { announcements: SystemMessageWithAuthor[] }) {
   const [state, action, pending] = useActionState(sendBroadcastMessageAction, null);
   const [bodyLen, setBodyLen] = useState(0);
   const [targetGroup, setTargetGroup] = useState<"ALL" | "ADMIN" | "SALES" | "USER">("ALL");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [attachmentName, setAttachmentName] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -57,6 +63,24 @@ export function ComposeClient() {
     }
   };
 
+  const handleDelete = (id: string) => setConfirmId(id);
+
+  const handleConfirmDelete = () => {
+    if (!confirmId) return;
+    setDeletingId(confirmId);
+    startTransition(async () => {
+      try {
+        await deleteAnnouncementAction(confirmId);
+        toast.success("Announcement deleted.");
+      } catch {
+        toast.error("Failed to delete. Please try again.");
+      } finally {
+        setDeletingId(null);
+        setConfirmId(null);
+      }
+    });
+  };
+
   const clearAttachment = () => {
     setAttachmentUrl("");
     setAttachmentName("");
@@ -65,6 +89,7 @@ export function ComposeClient() {
   };
 
   return (
+    <>
     <Card>
       <form action={action} className="flex flex-col gap-5">
         <Input name="title" label="Title" placeholder="Announcement title…" maxLength={200} required />
@@ -164,5 +189,66 @@ export function ComposeClient() {
         </Button>
       </form>
     </Card>
+
+    {/* Sent announcements */}
+    {announcements.length > 0 && (
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-foreground">Sent Announcements</h2>
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ background: "#0f1520", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          {announcements.map((msg, i) => (
+            <div
+              key={msg.id}
+              className="flex items-start justify-between gap-4 px-5 py-4"
+              style={{ borderBottom: i < announcements.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+            >
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div
+                  className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: "rgba(124,92,255,0.12)", border: "1px solid rgba(124,92,255,0.25)" }}
+                >
+                  <Megaphone className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{msg.title}</p>
+                  <p className="text-xs text-muted mt-0.5 line-clamp-1">{msg.body}</p>
+                  <p className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+                    {new Date(msg.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}
+                    {" · "}{new Date(msg.createdAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                    {" · by "}{msg.authorName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDelete(msg.id)}
+                disabled={deletingId !== null}
+                className="shrink-0 h-8 w-8 flex items-center justify-center rounded-lg transition-colors disabled:opacity-40"
+                style={{ color: "rgba(248,113,113,0.6)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.1)"; (e.currentTarget as HTMLElement).style.color = "#f87171"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(248,113,113,0.6)"; }}
+                title="Delete announcement"
+              >
+                {deletingId === msg.id
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  : <Trash2 className="h-3.5 w-3.5" />
+                }
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+      <ConfirmDialog
+        open={confirmId !== null}
+        title="Delete Announcement"
+        description="Are you sure you want to delete this announcement? It will be removed for all users and cannot be undone."
+        confirmLabel="Delete"
+        loading={deletingId !== null}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmId(null)}
+      />
+  </>
   );
 }

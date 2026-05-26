@@ -87,6 +87,10 @@ export const markDirectMessageRead = async (id: string, userId: string): Promise
     .where(and(eq(directMessages.id, id), eq(directMessages.toUserId, userId)));
 };
 
+export const deleteDirectMessageById = async (id: string): Promise<void> => {
+  await db.delete(directMessages).where(eq(directMessages.id, id));
+};
+
 export const deleteDirectMessagesByUser = async (userId: string): Promise<void> => {
   await db
     .delete(directMessages)

@@ -4,7 +4,7 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { verifyRole } from "@/lib/dal";
-import { createSystemMessage } from "@/db/queries/system-messages";
+import { createSystemMessage, deleteSystemMessage } from "@/db/queries/system-messages";
 import { getActiveUserRecipients, getActiveUsersByRole } from "@/db/queries/users";
 import { sendBroadcastEmail } from "@/lib/email";
 
@@ -64,5 +64,14 @@ export async function sendBroadcastMessageAction(
 
   revalidatePath("/dashboard/overview");
   revalidatePath("/dashboard/compose");
+  revalidatePath("/dashboard/news");
   return { success: true };
+}
+
+export async function deleteAnnouncementAction(id: string): Promise<void> {
+  await verifyRole(["SUPER_ADMIN"]);
+  await deleteSystemMessage(id);
+  revalidatePath("/dashboard/compose");
+  revalidatePath("/dashboard/news");
+  revalidatePath("/dashboard/overview");
 }

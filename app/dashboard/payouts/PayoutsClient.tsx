@@ -193,7 +193,7 @@ function HistoryRow({ req, partnerName }: { req: PayoutRequestEnriched | PayoutR
       {/* Amount */}
       <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-1 shrink-0 pl-13 sm:pl-0">
         <p className="text-base font-bold tabular-nums" style={{ color: cfg.color }}>
-          −{formatUsd(req.amount)}
+          {req.status === "rejected" ? formatUsd(req.amount) : `−${formatUsd(req.amount)}`}
         </p>
       </div>
     </div>

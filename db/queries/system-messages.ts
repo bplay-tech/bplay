@@ -80,6 +80,11 @@ export const markAllMessagesAsRead = async (userId: string): Promise<void> => {
 
 export type SystemMessageWithReadStatus = SystemMessageWithAuthor & { isRead: boolean };
 
+export const deleteSystemMessage = async (id: string): Promise<void> => {
+  await db.delete(messageReads).where(eq(messageReads.messageId, id));
+  await db.delete(systemMessages).where(eq(systemMessages.id, id));
+};
+
 export const getSystemMessagesWithReadStatus = async (
   userId: string
 ): Promise<SystemMessageWithReadStatus[]> => {

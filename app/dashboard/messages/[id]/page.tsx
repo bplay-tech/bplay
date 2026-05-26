@@ -4,6 +4,7 @@ import { ArrowLeft, Paperclip } from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import { getDirectMessageById, markDirectMessageRead } from "@/db/queries/direct-messages";
 import { LocalDate } from "@/components/ui/LocalDate";
+import { DeleteMessageButton } from "./DeleteMessageButton";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -54,6 +55,7 @@ export default async function MessageDetailPage({ params }: Props) {
               />
             </p>
           </div>
+          <DeleteMessageButton messageId={message.id} redirectAfter />
         </div>
 
         {/* Body */}

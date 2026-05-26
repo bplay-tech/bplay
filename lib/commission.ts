@@ -50,7 +50,7 @@ export async function processAffiliateCommission(purchaseId: string): Promise<vo
               buyerWallet: purchase.buyerWallet,
               txHash: purchase.txHash ?? null,
               status: "confirmed",
-              notes: `${diffRate.toFixed(2)}% commission diff (${adminTier.name} ${adminRate}% − ${salesTier.name} ${salesRate}%) on $${usdcAmount} purchase`,
+              notes: `${diffRate.toFixed(2)}% commission diff (${adminTier.name} ${adminRate}% − ${salesTier.name} ${salesRate}%) on $${usdcAmount} purchase via ${salesAffiliate.name} · admin: ${adminAffiliate.name}`,
             });
             await incrementCumulatedCommissions(adminAffiliation.affiliateId, adminCommission);
           }

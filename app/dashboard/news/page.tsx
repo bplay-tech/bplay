@@ -3,6 +3,7 @@ import { Newspaper, ChevronRight } from "lucide-react";
 import { verifySession } from "@/lib/dal";
 import { getSystemMessagesWithReadStatus } from "@/db/queries/system-messages";
 import { LocalDate } from "@/components/ui/LocalDate";
+import { DeleteAnnouncementButton } from "./DeleteAnnouncementButton";
 
 export default async function NewsPage() {
   const user = await verifySession();
@@ -34,36 +35,42 @@ export default async function NewsPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {messages.map((msg) => (
-            <Link
-              key={msg.id}
-              href={`/dashboard/news/${msg.id}`}
-              className={`group rounded-2xl p-5 flex items-start justify-between gap-4 transition-all hover:opacity-90 ${msg.isRead ? "opacity-50" : ""}`}
-              style={{
-                background: "#121826",
-                border: msg.isRead
-                  ? "1px solid rgba(255,255,255,0.07)"
-                  : "1px solid rgba(124,92,255,0.4)",
-              }}
-            >
-              <div className="min-w-0 flex items-start gap-3">
-                {!msg.isRead && (
-                  <span className="mt-1.5 h-2 w-2 rounded-full bg-purple-400 shrink-0" />
-                )}
-                <div className="min-w-0">
-                  <p className={`text-sm font-semibold group-hover:text-primary transition-colors truncate ${msg.isRead ? "text-white/50" : "text-white"}`}>
-                    {msg.title}
-                  </p>
-                  <p className="text-xs text-white/40 mt-1 line-clamp-2">
-                    {msg.body.slice(0, 140)}{msg.body.length > 140 ? "…" : ""}
-                  </p>
-                  <p className="text-xs text-white/25 mt-2">
-                    <LocalDate iso={msg.createdAt instanceof Date ? msg.createdAt.toISOString() : msg.createdAt} />
-                    {" · "}{msg.authorName}
-                  </p>
+            <div key={msg.id} className="relative flex items-start gap-2">
+              <Link
+                href={`/dashboard/news/${msg.id}`}
+                className={`group flex-1 rounded-2xl p-5 flex items-start justify-between gap-4 transition-all hover:opacity-90 ${msg.isRead ? "opacity-50" : ""}`}
+                style={{
+                  background: "#121826",
+                  border: msg.isRead
+                    ? "1px solid rgba(255,255,255,0.07)"
+                    : "1px solid rgba(124,92,255,0.4)",
+                }}
+              >
+                <div className="min-w-0 flex items-start gap-3">
+                  {!msg.isRead && (
+                    <span className="mt-1.5 h-2 w-2 rounded-full bg-purple-400 shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold group-hover:text-primary transition-colors truncate ${msg.isRead ? "text-white/50" : "text-white"}`}>
+                      {msg.title}
+                    </p>
+                    <p className="text-xs text-white/40 mt-1 line-clamp-2">
+                      {msg.body.slice(0, 140)}{msg.body.length > 140 ? "…" : ""}
+                    </p>
+                    <p className="text-xs text-white/25 mt-2">
+                      <LocalDate iso={msg.createdAt instanceof Date ? msg.createdAt.toISOString() : msg.createdAt} />
+                      {" · "}{msg.authorName}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/50 transition-colors shrink-0 mt-0.5" />
-            </Link>
+                <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/50 transition-colors shrink-0 mt-0.5" />
+              </Link>
+              {user.role === "SUPER_ADMIN" && (
+                <div className="shrink-0 self-center">
+                  <DeleteAnnouncementButton id={msg.id} />
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}

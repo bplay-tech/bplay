@@ -4,7 +4,7 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { verifyRole, verifySession } from "@/lib/dal";
-import { createDirectMessage } from "@/db/queries/direct-messages";
+import { createDirectMessage, deleteDirectMessageById, getDirectMessageById } from "@/db/queries/direct-messages";
 import { getUserById } from "@/db/queries/users";
 import { sendDirectMessageEmail } from "@/lib/email";
 
@@ -69,6 +69,17 @@ export async function sendDirectMessageAction(
 
   revalidatePath("/dashboard/messages");
   return { success: true };
+}
+
+export async function deleteDirectMessageAction(messageId: string): Promise<void> {
+  const user = await verifySession();
+  const message = await getDirectMessageById(messageId);
+  if (!message) return;
+  const isRecipient = message.toUserId === user.id;
+  const isSender = message.fromUserId === user.id;
+  if (!isRecipient && !isSender && user.role !== "SUPER_ADMIN") return;
+  await deleteDirectMessageById(messageId);
+  revalidatePath("/dashboard/messages");
 }
 
 export async function markMessageReadAction(messageId: string): Promise<void> {
