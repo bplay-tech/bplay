@@ -1,5 +1,6 @@
 "use client";
 
+import { Download } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
@@ -8,10 +9,11 @@ interface TransactionPendingModalProps {
   open: boolean;
   txHash?: string;
   confirmed: boolean;
+  purchaseId?: string;
   onClose: () => void;
 }
 
-export function TransactionPendingModal({ open, txHash, confirmed, onClose }: TransactionPendingModalProps) {
+export function TransactionPendingModal({ open, txHash, confirmed, purchaseId, onClose }: TransactionPendingModalProps) {
   return (
     <Modal open={open} onOpenChange={(o) => { if (!o && confirmed) onClose(); }} title={confirmed ? "Transaction Confirmed" : "Transaction In Progress"}>
       <div className="flex flex-col items-center gap-4 py-4">
@@ -48,6 +50,16 @@ export function TransactionPendingModal({ open, txHash, confirmed, onClose }: Tr
           <p className="text-xs text-muted text-center">
             Waiting for blockchain confirmation. This may take a minute.
           </p>
+        )}
+        {confirmed && purchaseId && (
+          <a
+            href={`/api/purchases/${purchaseId}/saft`}
+            download
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-card-border bg-card text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+          >
+            <Download className="h-4 w-4" />
+            Download SAFT
+          </a>
         )}
         {confirmed && (
           <Button onClick={onClose} className="w-full">

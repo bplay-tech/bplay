@@ -4,6 +4,9 @@ import { useActionState, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { CountryPhoneFields } from "@/components/ui/CountryPhoneFields";
+import { IdDocumentFields } from "@/components/ui/IdDocumentFields";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { registerViaReferralAction } from "@/features/affiliate/actions";
 
 export function RegisterForm({ referralCode }: { referralCode: string }) {
@@ -11,17 +14,28 @@ export function RegisterForm({ referralCode }: { referralCode: string }) {
   const [state, formAction, pending] = useActionState(action, null);
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [country, setCountry] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <Input
-        name="name"
-        label="Full Name"
-        type="text"
-        placeholder="Jane Doe"
-        autoComplete="name"
-        required
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Input
+          name="firstName"
+          label="First Name"
+          type="text"
+          placeholder="Jane"
+          autoComplete="given-name"
+          required
+        />
+        <Input
+          name="lastName"
+          label="Last Name"
+          type="text"
+          placeholder="Doe"
+          autoComplete="family-name"
+          required
+        />
+      </div>
       <Input
         name="email"
         label="Email"
@@ -30,6 +44,17 @@ export function RegisterForm({ referralCode }: { referralCode: string }) {
         autoComplete="email"
         required
       />
+      <CountryPhoneFields country={country} onCountryChange={setCountry} />
+      <DatePicker name="dateOfBirth" label="Date of Birth" required />
+      <Input
+        name="address"
+        label="Address"
+        type="text"
+        placeholder="Street, city, postal code"
+        autoComplete="street-address"
+        required
+      />
+      <IdDocumentFields country={country} />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-foreground">Password</label>
         <div className="relative">

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDocumentType, idNumberError } from "@/lib/id-document";
 
 export const emailSchema = z
   .string()
@@ -16,3 +17,50 @@ export const paginationSchema = z.object({
 });
 
 export type PaginationInput = z.infer<typeof paginationSchema>;
+
+const requiredString = (field: string) => z.string().trim().min(1, `${field} is required.`);
+
+export const dateOfBirthSchema = z
+  .string()
+  .trim()
+  .min(1, "Date of birth is required.")
+  .refine((v) => !Number.isNaN(Date.parse(v)), "Invalid date of birth.")
+  .refine((v) => {
+    const dob = new Date(v);
+    const cutoff = new Date();
+    cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 18);
+    return dob <= cutoff;
+  }, "You must be at least 18 years old.");
+
+const profileBase = z.object({
+  firstName: requiredString("First name"),
+  lastName: requiredString("Last name"),
+  phone: requiredString("Phone number").regex(/^[+]?[0-9 ()-]{6,20}$/, "Invalid phone number."),
+  dateOfBirth: dateOfBirthSchema,
+  country: requiredString("Country"),
+  address: requiredString("Address"),
+  documentType: requiredString("Document type").refine(isDocumentType, "Please select a valid document type."),
+  idNumber: requiredString("Identification number"),
+});
+
+const refineIdNumber = (
+  data: { documentType: string; idNumber: string; country: string },
+  ctx: z.RefinementCtx
+) => {
+  if (!data.idNumber.trim()) return; // empty is already caught by requiredString
+  const message = idNumberError(data.documentType, data.idNumber, data.country);
+  if (message) ctx.addIssue({ code: "custom", path: ["idNumber"], message });
+};
+
+export const profileSchema = profileBase.superRefine(refineIdNumber);
+
+export type ProfileInput = z.infer<typeof profileSchema>;
+
+export const registrationSchema = profileBase
+  .extend({
+    email: emailSchema,
+    password: z.string().min(8, "Password must be at least 8 characters."),
+  })
+  .superRefine(refineIdNumber);
+
+export type RegistrationInput = z.infer<typeof registrationSchema>;

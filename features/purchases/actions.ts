@@ -10,6 +10,8 @@ import {
   rejectBplayPurchase,
   getBplayPurchaseById,
 } from "@/db/queries/bplay-purchases";
+import { getUserById } from "@/db/queries/users";
+import { isProfileComplete } from "@/lib/profile";
 import { processAffiliateCommission } from "@/lib/commission";
 
 export async function createBplayPurchaseAction(
@@ -17,7 +19,11 @@ export async function createBplayPurchaseAction(
   buyerWallet: string,
   recipientAddress: string
 ): Promise<{ purchaseId: string; bplayAmount: number }> {
-  const user = await verifySession();
+  const session = await verifySession();
+  const user = await getUserById(session.id);
+  if (!user || !isProfileComplete(user)) {
+    throw new Error("Profile incomplete. Please complete your profile before purchasing.");
+  }
   const rate = await getExchangeRate();
   const rateNum = parseFloat(rate.rate);
   const bplayAmount = usdcAmount * rateNum;

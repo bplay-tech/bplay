@@ -42,6 +42,7 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress, p
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [purchaseId, setPurchaseId] = useState<string | undefined>();
 
   const customUsdcAmount = parseFloat(customInput);
   const isValidCustomAmount = !isNaN(customUsdcAmount) && customUsdcAmount > 0;
@@ -52,6 +53,7 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress, p
   const handleClose = () => {
     setPending(false);
     setTxHash(undefined);
+    setPurchaseId(undefined);
   };
 
   const handleConfirm = async (usdcAmount: number) => {
@@ -61,7 +63,8 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress, p
       if (chainId !== mainnet.id) {
         await switchChainAsync({ chainId: mainnet.id });
       }
-      const { purchaseId } = await createBplayPurchaseAction(usdcAmount, address, recipientAddress);
+      const { purchaseId: newPurchaseId } = await createBplayPurchaseAction(usdcAmount, address, recipientAddress);
+      setPurchaseId(newPurchaseId);
       setSelectedAmount(null);
       setPending(true);
       const hash = await writeContractAsync({
@@ -72,7 +75,7 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress, p
         chainId: mainnet.id,
       });
       setTxHash(hash as `0x${string}`);
-      await recordTxHashAction(purchaseId, hash);
+      await recordTxHashAction(newPurchaseId, hash);
     } catch {
       setPending(false);
     } finally {
@@ -268,7 +271,13 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress, p
         loading={confirming}
         partnerCommissionRate={partnerCommissionRate}
       />
-      <TransactionPendingModal open={pending} txHash={txHash} confirmed={isTxConfirmed} onClose={handleClose} />
+      <TransactionPendingModal
+        open={pending}
+        txHash={txHash}
+        confirmed={isTxConfirmed}
+        purchaseId={purchaseId}
+        onClose={handleClose}
+      />
     </div>
   );
 }

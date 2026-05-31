@@ -1,8 +1,12 @@
+import Link from "next/link";
 import { verifySession } from "@/lib/dal";
 import { getExchangeRate } from "@/lib/exchange";
 import { getUserById } from "@/db/queries/users";
 import { getAffiliationByReferredUser } from "@/db/queries/affiliations";
 import { getPartnerTierById } from "@/db/queries/partner-tiers";
+import { isProfileComplete } from "@/lib/profile";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { BuyBplaySection } from "@/features/purchases/components/BuyBplaySection";
 import { WalletActions } from "@/components/wallet/WalletActions";
 
@@ -12,6 +16,28 @@ export default async function BuyPage() {
     getExchangeRate(),
     getUserById(session.id),
   ]);
+
+  if (!user || !isProfileComplete(user)) {
+    return (
+      <div className="flex flex-col gap-6 w-full sm:max-w-2xl mx-auto">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Buy BPLAY</h1>
+          <p className="text-muted mt-1">Purchase BPLAY tokens using USDC</p>
+        </div>
+        <Card>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Complete your profile</h2>
+          <p className="text-muted text-sm mb-4">
+            Before purchasing tokens, please complete your profile details (full name, phone,
+            date of birth, country, address and identification number). These are required to
+            generate your purchase agreement (SAFT).
+          </p>
+          <Link href="/dashboard/settings">
+            <Button size="sm">Go to Settings</Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   const rateNum = parseFloat(rate.rate);
   const treasuryAddress = process.env.NEXT_PUBLIC_TREASURY_USDC_ADDRESS ?? "";

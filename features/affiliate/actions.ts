@@ -11,22 +11,34 @@ import { upsertSettings } from "@/db/queries/user-settings";
 import { upsertNotifications } from "@/db/queries/user-notifications";
 import { generateUniqueReferralCode } from "@/lib/referral";
 import { sendWelcomeEmail } from "@/lib/email";
-import { emailSchema } from "@/lib/zod";
+import { registrationSchema } from "@/lib/zod";
 
 export async function registerViaReferralAction(
   referralCode: string,
   _prev: { error: string } | null,
   formData: FormData
 ): Promise<{ error: string } | null> {
-  const name = (formData.get("name") as string)?.trim();
-  const emailResult = emailSchema.safeParse(formData.get("email"));
-  const password = formData.get("password") as string;
   const confirm = formData.get("confirm") as string;
+  const parsed = registrationSchema.safeParse({
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    dateOfBirth: formData.get("dateOfBirth"),
+    country: formData.get("country"),
+    address: formData.get("address"),
+    documentType: formData.get("documentType"),
+    idNumber: formData.get("idNumber"),
+    password: formData.get("password"),
+  });
 
-  if (!name || !emailResult.success || !password || !confirm) return { error: "All fields are required." };
-  const email = emailResult.data;
-  if (password.length < 8) return { error: "Password must be at least 8 characters." };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Please fill in all required fields." };
+  }
+  const { firstName, lastName, email, phone, dateOfBirth, country, address, documentType, idNumber, password } = parsed.data;
   if (password !== confirm) return { error: "Passwords do not match." };
+
+  const name = `${firstName} ${lastName}`;
 
   const referrer = await getUserByReferralCode(referralCode);
   if (!referrer) return { error: "Invalid referral link." };
@@ -44,6 +56,14 @@ export async function registerViaReferralAction(
     email,
     passwordHash,
     name,
+    firstName,
+    lastName,
+    phone,
+    dateOfBirth,
+    country,
+    address,
+    idDocumentType: documentType,
+    idNumber,
     role: "USER",
     partnerTierId: bronzeTier.id,
     referralCode: newReferralCode,

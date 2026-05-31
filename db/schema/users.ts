@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, boolean, pgEnum, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, boolean, pgEnum, numeric, date } from "drizzle-orm/pg-core";
 import { partnerTiers } from "./partner-tiers";
 
 export const userRoleEnum = pgEnum("user_role", ["USER", "SALES", "ADMIN", "SUPER_ADMIN"]);
@@ -8,6 +8,14 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  dateOfBirth: date("date_of_birth", { mode: "string" }),
+  country: text("country"),
+  address: text("address"),
+  idDocumentType: text("id_document_type"),
+  idNumber: text("id_number"),
   role: userRoleEnum("role").notNull().default("USER"),
   partnerTierId: uuid("partner_tier_id").notNull().references(() => partnerTiers.id),
   referralCode: text("referral_code").notNull().unique(),

@@ -16,3 +16,14 @@ export const formatAmount = (amount: bigint, decimals = 18) => {
   const fractionStr = fraction.toString().padStart(decimals, "0").slice(0, 4);
   return `${whole}.${fractionStr}`;
 };
+
+export const formatLongDate = (value: Date | string): string => {
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
