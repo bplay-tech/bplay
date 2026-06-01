@@ -12,7 +12,7 @@ import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { BuyConfirmModal } from "./BuyConfirmModal";
 import { TransactionPendingModal } from "./TransactionPendingModal";
 import { createBplayPurchaseAction, recordTxHashAction } from "@/features/purchases/actions";
-import { QUICK_BUY_AMOUNTS, usdcToBplay, formatBplay, formatUsdShort } from "@/lib/exchange";
+import { QUICK_BUY_AMOUNTS, usdcToBplay, formatBplay, formatBplayShort, formatUsdShort } from "@/lib/exchange";
 import { cn } from "@/lib/utils";
 
 const ERC20_TRANSFER_ABI = [
@@ -171,7 +171,8 @@ export function BuyBplaySection({ rate, recipientAddress, usdcContractAddress, p
                   </span>
                   <span className="text-xs text-muted mt-0.5">USDC</span>
                   <span className="text-[10px] text-primary mt-1 font-medium">
-                    {formatBplay(usdcToBplay(amount, rate))}
+                    <span className="sm:hidden">{formatBplayShort(usdcToBplay(amount, rate))}</span>
+                    <span className="hidden sm:inline">{formatBplay(usdcToBplay(amount, rate))}</span>
                   </span>
                 </button>
               ))}

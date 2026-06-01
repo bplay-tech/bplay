@@ -25,3 +25,17 @@ export const formatUsd = (val: string | number): string =>
 
 export const formatBplay = (val: string | number): string =>
   `${parseFloat(String(val)).toLocaleString()} BPLAY`;
+
+// Short form for tight layouts: 3125 -> "3.1k BPLAY", 312500 -> "312.5k BPLAY".
+export const formatBplayShort = (val: string | number): string => {
+  const value = parseFloat(String(val));
+  if (value >= 1_000_000) {
+    const m = value / 1_000_000;
+    return `${Number.isInteger(m) ? m : m.toFixed(1)}M BPLAY`;
+  }
+  if (value >= 1_000) {
+    const k = value / 1_000;
+    return `${Number.isInteger(k) ? k : k.toFixed(1)}k BPLAY`;
+  }
+  return `${value.toLocaleString()} BPLAY`;
+};
