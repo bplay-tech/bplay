@@ -7,7 +7,16 @@ export const getExchangeRate = async (): Promise<ExchangeRate> => {
   return rate;
 };
 
-export const QUICK_BUY_AMOUNTS = [10, 50, 100, 500] as const;
+export const QUICK_BUY_AMOUNTS = [100, 500, 2000, 10000] as const;
+
+// Short form for tight layouts: 100 -> "100", 2000 -> "2k", 10000 -> "10k".
+export const formatUsdShort = (value: number): string => {
+  if (value >= 1000) {
+    const k = value / 1000;
+    return `${Number.isInteger(k) ? k : k.toFixed(1)}k`;
+  }
+  return String(value);
+};
 
 export const usdcToBplay = (usdc: number, rate: number): number => usdc * rate;
 
