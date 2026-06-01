@@ -19,11 +19,13 @@ export async function updateProfileAction(
     dateOfBirth: formData.get("dateOfBirth"),
     country: formData.get("country"),
     address: formData.get("address"),
+    documentType: formData.get("documentType"),
+    idNumber: formData.get("idNumber"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please fill in all required fields." };
   }
-  const { firstName, lastName, phone, dateOfBirth, country, address } = parsed.data;
+  const { firstName, lastName, phone, dateOfBirth, country, address, documentType, idNumber } = parsed.data;
   await updateUser(user.id, {
     firstName,
     lastName,
@@ -31,6 +33,8 @@ export async function updateProfileAction(
     dateOfBirth,
     country,
     address,
+    idDocumentType: documentType,
+    idNumber,
     name: `${firstName} ${lastName}`,
   });
   revalidatePath("/dashboard/settings");

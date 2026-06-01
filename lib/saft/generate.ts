@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import type { User } from "@/db/schema/users";
 import type { BplayPurchase } from "@/db/schema/bplay-purchases";
 import { formatLongDate } from "@/lib/utils";
+import { documentTypeLabel } from "@/lib/id-document";
 import { SAFT_BLOCKS, type SaftBlock } from "./template";
 
 export interface SaftData {
@@ -32,6 +33,12 @@ export const buildSaftData = (user: User, purchase: BplayPurchase): SaftData => 
   const tokenAmount = parseFloat(purchase.bplayAmount);
   const pricePerToken = tokenAmount > 0 ? usdcAmount / tokenAmount : 0;
   const address = [user.address, user.country].filter(Boolean).join(", ");
+  const docLabel = documentTypeLabel(user.idDocumentType);
+  const idNumber = user.idNumber
+    ? docLabel
+      ? `${user.idNumber} (${docLabel})`
+      : user.idNumber
+    : BLANK;
 
   return {
     agreementDate: formatLongDate(purchase.createdAt) || BLANK,
@@ -39,7 +46,7 @@ export const buildSaftData = (user: User, purchase: BplayPurchase): SaftData => 
     recipientNationality: user.country || BLANK,
     recipientAddress: address || BLANK,
     recipientDateOfBirth: user.dateOfBirth ? formatLongDate(user.dateOfBirth) : BLANK,
-    recipientIdNumber: BLANK,
+    recipientIdNumber: idNumber,
     recipientEmail: user.email,
     purchaseAmount: `${usd(usdcAmount)} (USDC)`,
     tokenAmount: tokenAmount.toLocaleString("en-US", { maximumFractionDigits: 6 }),

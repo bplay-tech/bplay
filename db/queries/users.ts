@@ -28,6 +28,8 @@ const userWithTierSelect = {
   dateOfBirth: users.dateOfBirth,
   country: users.country,
   address: users.address,
+  idDocumentType: users.idDocumentType,
+  idNumber: users.idNumber,
   role: users.role,
   partnerTierId: users.partnerTierId,
   referralCode: users.referralCode,

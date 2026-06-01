@@ -14,6 +14,8 @@ export const users = pgTable("users", {
   dateOfBirth: date("date_of_birth", { mode: "string" }),
   country: text("country"),
   address: text("address"),
+  idDocumentType: text("id_document_type"),
+  idNumber: text("id_number"),
   role: userRoleEnum("role").notNull().default("USER"),
   partnerTierId: uuid("partner_tier_id").notNull().references(() => partnerTiers.id),
   referralCode: text("referral_code").notNull().unique(),

@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CountryPhoneFields } from "@/components/ui/CountryPhoneFields";
+import { IdDocumentFields } from "@/components/ui/IdDocumentFields";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { registerViaReferralAction } from "@/features/affiliate/actions";
 
@@ -53,6 +54,7 @@ export function RegisterForm({ referralCode }: { referralCode: string }) {
         autoComplete="street-address"
         required
       />
+      <IdDocumentFields country={country} />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-foreground">Password</label>
         <div className="relative">

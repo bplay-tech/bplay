@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CountryPhoneFields } from "@/components/ui/CountryPhoneFields";
+import { IdDocumentFields } from "@/components/ui/IdDocumentFields";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { updateProfileAction } from "@/features/settings/actions";
 
@@ -16,6 +17,8 @@ interface ProfileFormProps {
   dateOfBirth: string | null;
   country: string | null;
   address: string | null;
+  documentType: string | null;
+  idNumber: string | null;
 }
 
 export function ProfileForm({
@@ -26,6 +29,8 @@ export function ProfileForm({
   dateOfBirth,
   country,
   address,
+  documentType,
+  idNumber,
 }: ProfileFormProps) {
   const [state, action, pending] = useActionState(updateProfileAction, null);
   const [countryValue, setCountryValue] = useState(country ?? "");
@@ -41,6 +46,7 @@ export function ProfileForm({
         <CountryPhoneFields country={countryValue} onCountryChange={setCountryValue} defaultPhone={phone} />
         <DatePicker name="dateOfBirth" label="Date of Birth" defaultValue={dateOfBirth} required />
         <Input name="address" label="Address" defaultValue={address ?? ""} required />
+        <IdDocumentFields country={countryValue} defaultType={documentType} defaultNumber={idNumber} />
         {state && "error" in state && <p className="text-sm text-danger">{state.error}</p>}
         {state && "success" in state && <p className="text-sm text-success">Profile updated.</p>}
         <Button type="submit" loading={pending} size="sm" className="self-start">

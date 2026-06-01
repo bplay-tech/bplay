@@ -40,6 +40,8 @@ export default async function SettingsPage() {
         dateOfBirth={user.dateOfBirth}
         country={user.country}
         address={user.address}
+        documentType={user.idDocumentType}
+        idNumber={user.idNumber}
       />
       {!isUser && <PayoutSettingsForm settings={settings} />}
       <PurchaseDocuments purchases={saftPurchases} profileComplete={isProfileComplete(user)} />
