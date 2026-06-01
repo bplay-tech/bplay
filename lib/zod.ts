@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { isDocumentType, idNumberError } from "@/lib/id-document";
 
 export const emailSchema = z
   .string()
@@ -32,35 +31,20 @@ export const dateOfBirthSchema = z
     return dob <= cutoff;
   }, "You must be at least 18 years old.");
 
-const profileBase = z.object({
+export const profileSchema = z.object({
   firstName: requiredString("First name"),
   lastName: requiredString("Last name"),
   phone: requiredString("Phone number").regex(/^[+]?[0-9 ()-]{6,20}$/, "Invalid phone number."),
   dateOfBirth: dateOfBirthSchema,
   country: requiredString("Country"),
   address: requiredString("Address"),
-  documentType: requiredString("Document type").refine(isDocumentType, "Please select a valid document type."),
-  idNumber: requiredString("Identification number"),
 });
-
-const refineIdNumber = (
-  data: { documentType: string; idNumber: string; country: string },
-  ctx: z.RefinementCtx
-) => {
-  if (!data.idNumber.trim()) return; // empty is already caught by requiredString
-  const message = idNumberError(data.documentType, data.idNumber, data.country);
-  if (message) ctx.addIssue({ code: "custom", path: ["idNumber"], message });
-};
-
-export const profileSchema = profileBase.superRefine(refineIdNumber);
 
 export type ProfileInput = z.infer<typeof profileSchema>;
 
-export const registrationSchema = profileBase
-  .extend({
-    email: emailSchema,
-    password: z.string().min(8, "Password must be at least 8 characters."),
-  })
-  .superRefine(refineIdNumber);
+export const registrationSchema = profileSchema.extend({
+  email: emailSchema,
+  password: z.string().min(8, "Password must be at least 8 characters."),
+});
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;

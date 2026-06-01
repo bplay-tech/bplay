@@ -27,15 +27,13 @@ export async function registerViaReferralAction(
     dateOfBirth: formData.get("dateOfBirth"),
     country: formData.get("country"),
     address: formData.get("address"),
-    documentType: formData.get("documentType"),
-    idNumber: formData.get("idNumber"),
     password: formData.get("password"),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please fill in all required fields." };
   }
-  const { firstName, lastName, email, phone, dateOfBirth, country, address, documentType, idNumber, password } = parsed.data;
+  const { firstName, lastName, email, phone, dateOfBirth, country, address, password } = parsed.data;
   if (password !== confirm) return { error: "Passwords do not match." };
 
   const name = `${firstName} ${lastName}`;
@@ -62,8 +60,6 @@ export async function registerViaReferralAction(
     dateOfBirth,
     country,
     address,
-    idDocumentType: documentType,
-    idNumber,
     role: "USER",
     partnerTierId: bronzeTier.id,
     referralCode: newReferralCode,

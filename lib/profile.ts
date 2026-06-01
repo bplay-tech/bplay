@@ -7,8 +7,6 @@ export const REQUIRED_PROFILE_FIELDS = [
   "dateOfBirth",
   "country",
   "address",
-  "idDocumentType",
-  "idNumber",
 ] as const;
 
 type ProfileFields = Pick<User, (typeof REQUIRED_PROFILE_FIELDS)[number]>;
