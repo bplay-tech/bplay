@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { sendDirectMessageAction } from "@/features/messaging/actions";
-import { Paperclip, X, Loader2, Search, ChevronLeft, ChevronRight, User } from "lucide-react";
+import { Paperclip, X, Loader2, Search, ChevronLeft, ChevronRight, User, Users } from "lucide-react";
 
 interface Recipient {
   id: string;
@@ -24,6 +24,15 @@ const ROLE_LABEL: Record<string, { label: string; color: string }> = {
 interface Props {
   recipients: Recipient[];
 }
+
+type TargetType = "INDIVIDUAL" | "GROUP";
+type TargetGroup = "ADMIN" | "SALES" | "USER";
+
+const TARGET_GROUPS: { value: TargetGroup; label: string; description: string }[] = [
+  { value: "ADMIN", label: "All Admins", description: "Admin accounts only" },
+  { value: "SALES", label: "All Sales",  description: "Sales accounts only" },
+  { value: "USER",  label: "All Users",  description: "Regular buyer accounts" },
+];
 
 const MAX_BODY = 5000;
 const PAGE_SIZE = 8;
@@ -200,6 +209,8 @@ function RecipientPicker({
 export function ComposeMessageClient({ recipients }: Props) {
   const [state, action, pending] = useActionState(sendDirectMessageAction, null);
   const [bodyLen, setBodyLen] = useState(0);
+  const [targetType, setTargetType] = useState<TargetType>("INDIVIDUAL");
+  const [targetGroup, setTargetGroup] = useState<TargetGroup>("ADMIN");
   const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [attachmentName, setAttachmentName] = useState("");
@@ -248,12 +259,65 @@ export function ComposeMessageClient({ recipients }: Props) {
   return (
     <Card>
       <form action={action} className="flex flex-col gap-5">
-        <RecipientPicker
-          recipients={recipients}
-          selected={selectedRecipient}
-          onSelect={setSelectedRecipient}
-        />
-        <input type="hidden" name="toUserId" value={selectedRecipient?.id ?? ""} />
+        {/* Send-to mode tabs */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-foreground">Send to</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { value: "INDIVIDUAL" as TargetType, label: "Individual", Icon: User },
+              { value: "GROUP" as TargetType, label: "Group", Icon: Users },
+            ]).map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTargetType(value)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all"
+                style={
+                  targetType === value
+                    ? { background: "rgba(124,92,255,0.2)", border: "1px solid rgba(124,92,255,0.5)" }
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)" }
+                }
+              >
+                <Icon className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-white">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {targetType === "INDIVIDUAL" ? (
+          <RecipientPicker
+            recipients={recipients}
+            selected={selectedRecipient}
+            onSelect={setSelectedRecipient}
+          />
+        ) : (
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-foreground">Target group</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {TARGET_GROUPS.map((g) => (
+                <button
+                  key={g.value}
+                  type="button"
+                  onClick={() => setTargetGroup(g.value)}
+                  className="flex flex-col items-start px-3 py-2.5 rounded-xl text-left transition-all"
+                  style={
+                    targetGroup === g.value
+                      ? { background: "rgba(124,92,255,0.2)", border: "1px solid rgba(124,92,255,0.5)" }
+                      : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)" }
+                  }
+                >
+                  <span className="text-xs font-semibold text-white">{g.label}</span>
+                  <span className="text-[10px] text-white/40 mt-0.5">{g.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <input type="hidden" name="targetType" value={targetType} />
+        <input type="hidden" name="toUserId" value={targetType === "INDIVIDUAL" ? selectedRecipient?.id ?? "" : ""} />
+        <input type="hidden" name="targetGroup" value={targetType === "GROUP" ? targetGroup : ""} />
 
         <Input name="subject" label="Subject" placeholder="Message subject…" maxLength={200} required />
 
@@ -324,10 +388,12 @@ export function ComposeMessageClient({ recipients }: Props) {
         <Button
           type="submit"
           loading={pending}
-          disabled={uploading || !selectedRecipient}
+          disabled={uploading || (targetType === "INDIVIDUAL" && !selectedRecipient)}
           className="self-start"
         >
-          Send Message
+          {targetType === "INDIVIDUAL"
+            ? "Send Message"
+            : `Send to ${TARGET_GROUPS.find((g) => g.value === targetGroup)?.label ?? "Group"}`}
         </Button>
       </form>
     </Card>

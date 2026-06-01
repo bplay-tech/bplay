@@ -12,8 +12,8 @@ export default async function ComposeMessagePage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Compose Message</h1>
         <p className="text-muted mt-1 text-sm">
-          Send a direct message to a specific user. They will receive an email notification
-          and see it in their Messages inbox.
+          Send a direct message to a specific user, or to a role group (all admins, all sales,
+          or all users). Recipients receive an email notification and see it in their Messages inbox.
         </p>
       </div>
       <ComposeMessageClient recipients={recipients} />
